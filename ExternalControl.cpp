@@ -36,6 +36,26 @@ void ExternalControl::handle_sub(int ID, int type, void* _data, size_t size){
     }
 }
 
+/*
+ * 处理来自MainScene的NewTrace
+*/
+
+void ExternalControl::onSetNewTrace(int robotID, QPointF start, QPointF dx){
+    if (data){
+        double th = atan2(dx.y(), dx.x());
+        int angle = th*180 / 3.141592654;
+
+        qDebug()<<QString("(%1, %2) - %3").arg(start.x()).arg(start.y()).arg(angle);
+
+        data->traceDefinition.x = start.x();
+        data->traceDefinition.y = start.y();
+        data->traceDefinition.heading = angle;
+    }
+}
+
+/*
+ * 向Client发送全局命令
+*/
 void ExternalControl::onSetCurrentConfig(){
     int robotID = 1;
     if (data){
@@ -62,20 +82,8 @@ void ExternalControl::onResetCurrentConfig(){
     }
 }
 
-void ExternalControl::onSetNewTrace(int robotID, QPointF start, QPointF dx){
-    if (data){
-        double th = atan2(dx.y(), dx.x());
-        int angle = th*180 / 3.141592654;
 
-        qDebug()<<QString("(%1, %2) - %3").arg(start.x()).arg(start.y()).arg(angle);
-
-        data->traceDefinition.x = start.x();
-        data->traceDefinition.y = start.y();
-        data->traceDefinition.heading = angle;
-    }
-}
-
-void ExternalControl::onStartExperiment(){
+void ExternalControl::onStartExperiment(){    
     int robotID = 1;
     int rep = agent.request(robotID, (int)myEvent::Basic::startExperiment);
     if (rep != (int)myReply::good){
@@ -90,6 +98,9 @@ void ExternalControl::onStopExperiment(){
     }
 }
 
+/*
+ * Swithced Experiment
+*/
 void ExternalControl::onToAutonomous(int robotID){
     if (data){
         if (data->experimentID == ExpUsing::expSwitch){
@@ -101,7 +112,6 @@ void ExternalControl::onToAutonomous(int robotID){
         }
     }
 }
-
 void ExternalControl::onToTeleoperation(int robotID, QPointF start, QPointF dx){
     if (data){
         if (data->experimentID == ExpUsing::expSwitch){
@@ -122,6 +132,10 @@ void ExternalControl::onToTeleoperation(int robotID, QPointF start, QPointF dx){
         }
     }
 }
+
+/*
+ * Shared Experiment
+*/
 void ExternalControl::onNewUserTarget(int robotID, QPointF start, QPointF dx){
     if (data){
         if (data->experimentID == ExpUsing::expShared){
@@ -173,6 +187,10 @@ void ExternalControl::onRemoveLastTarget(int robotID){
     }
 }
 
+/*
+ * Tunnel Experiment
+*/
+
 void ExternalControl::onNewTunnelTarget(int robotID, QPointF start, QPointF dx){
     if (data){
         if (data->experimentID == ExpUsing::expTunnel){
@@ -222,6 +240,9 @@ void ExternalControl::onRemoveAllTunnelTarget(int robotID){
     }
 }
 
+/*
+ * Direct Linear Blend Experiment
+*/
 
 void ExternalControl::onDirectBlend_NewCmd(int robotID, QPointF start, QPointF dx){
     if (data){

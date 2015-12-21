@@ -74,6 +74,7 @@ public:
     Agent       agent;
     atomic_bool isUpdating;
     CoreData*   data  = nullptr;
+    int client_num = 1;
 };
 
 #endif // EXTERNALCONTROL_H

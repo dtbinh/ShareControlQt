@@ -61,6 +61,8 @@ public slots:
     void setSceneMode(SceneMode _mode);
     void intoPlaceRobot()       {setSceneMode(SceneMode::placing_robots);}
     void intoControlInterface() {setSceneMode(SceneMode::control_interface);}
+
+    // 把Tunnel画上去\擦掉
     void onSetupTunnel(double R, double r);
     void onClearTunnel(){
         for (auto& item : tunnelLines)

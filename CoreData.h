@@ -30,6 +30,8 @@ public:
 
     // Used by
     pGraphicsRobotItem robot = nullptr;
+
+
 };
 
 inline CoreData::CoreData(){
