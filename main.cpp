@@ -54,7 +54,6 @@ void onExperimentStart(MainWindow& w, MainScene&s, ControlPanel& c, ExternalCont
     }
 
     s.isTraceMode = false;
-    data.addedUserTarget.clear();
     ext.isUpdating = true;
     ext.onStartExperiment();
     s.setSceneMode(SceneMode::control_interface);
@@ -120,14 +119,17 @@ int main(int argc, char *argv[])
     s.data = &data;
     c.data = &data;
     ext.data = &data;
-    initMainWindow(w, s);
+    c.refreshBasicConfig(); // 根据data的数据更新界面
+    initMainWindow(w, s);   // 设置画布大小等
 
     s.isTraceMode = true;
     //ext.agent.me = client_data{"192.168.1.200", 0, 5544, 5545};
     //ext.connect({"192.168.1.224", 1, 4455, 4456});
 
     ext.agent.me = client_data{"127.0.0.1", 0, 5544, 5545};
-    ext.connect({"127.0.0.1", 1, 4455, 4456});
+    //ext.connect({"127.0.0.1", 1, 4455, 4456});
+
+    ext.connect({ client_data{"127.0.0.1", 1, 4455, 4456},  client_data{"127.0.0.1", 2, 4457, 4458}});
 
     // Pannel之间的连接
     connectPannel(c, ext);
@@ -143,8 +145,16 @@ int main(int argc, char *argv[])
                      [&](){  onExperimentStop(w, s, c, ext, data);  });
 
     // 放机器人
-    data.robot = s.addRobot(1, 0, 0, 90);
-
+    data.useDefaultFromClient = true;
+    data.newTargetAsReplace   = true;
+    data.robots.push_back(s.addRobot(1, 0, 0, 90));
+    data.robots.push_back(s.addRobot(2, 0, 1, 90));
+    data.robots.push_back(s.addRobot(3, 1, 1, 90));
+    data.robots.push_back(s.addRobot(4, 1, 0, 90));
+    data.rec_state.push_back({});
+    data.rec_state.push_back({});
+    data.rec_state.push_back({});
+    data.rec_state.push_back({});
 
     w.show();
     c.show();

@@ -14,9 +14,9 @@ ControlPanel::ControlPanel(QWidget *parent) :
     this->textKaiShi = ui->btnStartStop->text();
 
     // SLIDERS
-    connect(ui->sliderWinSize, &QSlider::valueChanged, this, &ControlPanel::onWinSizeChanged);
+    connect(ui->sliderWinSize,    &QSlider::valueChanged, this, &ControlPanel::onWinSizeChanged);
     connect(ui->sliderQDecayTIme, &QSlider::valueChanged, this, &ControlPanel::onDecayTimeChanged);
-    connect(ui->sliderKusr, &QSlider::valueChanged, this, &ControlPanel::onKusrChanged);
+    connect(ui->sliderKusr,       &QSlider::valueChanged, this, &ControlPanel::onKusrChanged);
 
     // RADIOBUTTON
     // ExpUsing
@@ -34,6 +34,7 @@ ControlPanel::ControlPanel(QWidget *parent) :
     });
 
 
+    // RADIOBUTTON
     // TargetType
     connect(ui->rtnByPosition, &QRadioButton::clicked, [=](){
         this->onUserTypeChanged(TargetType::position);
@@ -42,7 +43,7 @@ ControlPanel::ControlPanel(QWidget *parent) :
         this->onUserTypeChanged(TargetType::velocity);
     });
 
-    // 界面模式
+    // 界面模式（当前是PlaceRobot还是PlaceTrace）
     connect(ui->rtnSetRobot, &QRadioButton::clicked, [=](){
         if (data){
             data->isPlacingRobot = true;
@@ -58,7 +59,7 @@ ControlPanel::ControlPanel(QWidget *parent) :
         emit this->intoTraceSettingMode();
     });
 
-    // 控制模式
+    // Robot采用哪种模型：理想(ideal) 还是 仿真(direct)(物理直接控制)
     connect(ui->rtnIdeal, &QRadioButton::clicked, [=](){
         if (data){
             data->robot_type = RobotType::ideal;
@@ -73,20 +74,28 @@ ControlPanel::ControlPanel(QWidget *parent) :
     // PUSH BUTTON
     connect(ui->btnSetConfig, &QPushButton::clicked,  [=](){
         if (data){
-            QPointF pos   = data->robot->RealPos();
-            qreal heading = data->robot->Heading();
+            // 为兼容以前的实验(只取第一个Robot的位置)
+            // (后续实验中robots初始位置不由此设置)
+            QPointF pos   = data->robots[0]->RealPos();
+            qreal heading = data->robots[0]->Heading();
             data->robotStartState.x       = pos.x();
             data->robotStartState.y       = pos.y();
         }
         emit this->setCurrentConfig();
+
+        // 清除、显示Tunnel
         if (data->experimentID == ExpUsing::expTunnel){
+            // tunnel_R, tunnel_r是在client端设置的
             emit this->setupTunnel(data->tunnel_R, data->tunnel_r);
         }
         else emit this->clearTunnel();
     });
+
     connect(ui->btnResetConfig, &QPushButton::clicked,  [=](){
         emit this->resetCurrentConfig();
     });
+
+    // 开始/结束实验按钮
     connect(ui->btnStartStop, &QPushButton::clicked, [&](){
         if (data){
             if (data->experiment_running)
@@ -96,6 +105,8 @@ ControlPanel::ControlPanel(QWidget *parent) :
         }
     });
 
+    // 根据设置更新界面中各按钮的情况
+    // refreshBasicConfig(); // 这没有用 因为最开始的时候data是nullptr
 }
 
 ControlPanel::~ControlPanel()
@@ -116,7 +127,7 @@ void ControlPanel::onKusrChanged(int pos){
         float power = (pos / 99.0) * (maxKusrPower - minKusrPower) + minKusrPower;
         data->Kusr_base = std::powf(10, power);
         ui->labKusr->setText(QString("Kusr基准:%1").arg(data->Kusr_base, 0, 'g', 3));
-        //qDebug()<<"new Kusr bas "<<data->Kusr_base;
+        //qDebug()<<"new Kusr base "<<data->Kusr_base;
     }
 }
 
@@ -145,8 +156,16 @@ void ControlPanel::onUserTypeChanged(TargetType type){
 void ControlPanel::beforeStartingExperiment(){
     ui->gpConfig->setDisabled(true);
     ui->btnStartStop->setText(QString("停止"));
-    emit this->startExperiment();
+
+    // 每次开始实验前清空record
+    for (auto& rec : data->rec_state){
+        rec.clear();
+    }
+
+    // 记录实验的开始时间
+    data->t_start = std::chrono::steady_clock::now();
     data->experiment_running = true;
+    emit this->startExperiment();
 }
 
 void ControlPanel::beforeStopExperiment(){
@@ -155,10 +174,13 @@ void ControlPanel::beforeStopExperiment(){
     emit this->stopExperiment();
 
     data->experiment_running = false;
+    // 记录实验结束的时间
+    data->t_end = std::chrono::steady_clock::now();
 }
 
 void ControlPanel::refreshBasicConfig(){
     if (data){
+        // 利用CoreData更新实验设置: 用什么实验、用什么模型、MPC窗大小多少
         bool op;
         op = data->experimentID == ExpUsing::expSwitch;
         ui->rtnExpSwitch->setChecked(op);
@@ -166,6 +188,8 @@ void ControlPanel::refreshBasicConfig(){
         ui->rtnExpShared->setChecked(op);
         op = data->experimentID == ExpUsing::expDirect;
         ui->rtnExpDirect->setChecked(op);
+        op = data->experimentID == ExpUsing::expTunnel;
+        ui->rtnExpTunnel->setChecked(op);
 
         op = data->robot_type == RobotType::ideal;
         ui->rtnIdeal->setChecked(op);
@@ -176,5 +200,9 @@ void ControlPanel::refreshBasicConfig(){
         int pos = int((winSize - minWinSize) / (maxWinSize - minWinSize) * 100 + 0.5);
         ui->sliderWinSize->setSliderPosition(pos);
         onWinSizeChanged(pos);
+
+        // 重置实验中发送数据时的设置
+        onKusrChanged(50);      // 设置在中心点
+        onDecayTimeChanged(50); // 设置在中心点
     }
 }

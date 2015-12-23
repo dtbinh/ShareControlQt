@@ -30,8 +30,9 @@ signals:
     void newScreenPrecision(int precision);
     void setupTunnel(double, double);
     void clearTunnel();
+
 public slots:
-    void refreshBasicConfig();
+    void refreshBasicConfig();      // 根据CoreData更新各按钮、Slider的信息
     void onWinSizeChanged(int pos);
     void onKusrChanged(int pos);
     void onDecayTimeChanged(int pos);

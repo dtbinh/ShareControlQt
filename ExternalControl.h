@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <atomic>
+#include <set>
 #include "Util/Auxilary.h"
 #include "Agent.hpp"
 #include "basic/app-share.hpp"
@@ -58,8 +59,11 @@ public slots:
     void onDirectBlend_ReplaceLast(int robotID, QPointF start, QPointF dx);
     void onDirectBlend_RemoveLast(int robotID);
     void onDirectBlend_RemoveAll(int robotID);
+
 public:
-    void connect(const client_data& target);
+    void connect(const client_data& client);
+    void connect(const std::vector<client_data>& client_list, const std::set<int>& except = {});
+
     void start_updating(){
         isUpdating = true;
     }

@@ -13,23 +13,52 @@ void ExternalControl::connect(const client_data& target){
     };
     isUpdating = false;
     agent.start(netAgent::sub_thread);
-    qDebug()<<"Everything started";
+    qDebug()<<QString("Everything started");
 }
 
+void ExternalControl::connect(const std::vector<client_data>& client_list, const std::set<int>& except){
+    agent.server_start();
+    agent.connect_to(client_list, except);
+
+    agent.handle_broadcast = [&](int ID, int type, void* data, size_t size){
+        this->handle_sub(ID, type, data, size);
+    };
+
+    isUpdating = false;
+    agent.start(netAgent::sub_thread);
+    qDebug()<<QString("Everything started");
+}
+
+
 void ExternalControl::handle_sub(int ID, int type, void* _data, size_t size){
+    using std::chrono::steady_clock;
+    using std::chrono::milliseconds;
+    using std::chrono::duration_cast;
+    auto tnow = std::chrono::steady_clock::now();
+
     myBroadcast::Basic _type = myBroadcast::Basic(type);
+    int index = ID - 1;
+    if (index >= data->rec_state.size()){
+        qDebug()<<QString("Weired");
+    }
+
     if (_type == myBroadcast::Basic::state){
-        if (size == sizeof(RobotStateData)){
+        if (size == sizeof(RobotStateData) && this->isUpdating){
             RobotStateData* pstate = (RobotStateData*)_data;
-            if (this->isUpdating)
-                  emit this->newPosition(ID, pstate->x, pstate->y, pstate->heading, pstate->velocity);
+
+            // To be tested here
+            data->rec_state[index].push_back(*pstate);
+            // MSVC2013's duration cast may be faulty
+            data->rec_state[index].back().t_now = duration_cast<milliseconds>(tnow - data->t_start);
+            emit this->newPosition(ID, pstate->x, pstate->y, pstate->heading, pstate->velocity);
+
             //qDebug()<<QString("new state %1, (%2, %3) - %4, %5").arg(ID)
             //                                                    .arg(pstate->x).arg(pstate->y)
             //                                                    .arg(pstate->heading).arg(pstate->velocity);
         }
-        else{
-            qDebug()<<"Unrecognized State Broadcast";
-        }
+        //else{
+        //    qDebug()<<"Unrecognized State Broadcast";
+       // }
     }
     else{
         qDebug()<<"Strange Broadcast Received";
@@ -57,13 +86,15 @@ void ExternalControl::onSetNewTrace(int robotID, QPointF start, QPointF dx){
  * 向Client发送全局命令
 */
 void ExternalControl::onSetCurrentConfig(){
-    int robotID = 1;
     if (data){
         //qDebug()<<"set current config";
         data->robotStartState.heading = data->traceDefinition.heading;  // 免去设置初始角度的问题....
 
         BasicExperimentConfig* config = (BasicExperimentConfig*)data;
-        agent.request(robotID, int(myEvent::Basic::updateBasicConfig), config, sizeof(BasicExperimentConfig));
+        //agent.request(robotID, int(myEvent::Basic::updateBasicConfig), config, sizeof(BasicExperimentConfig));
+
+        // 因为有多个Agent 所以采用广播的方式
+        agent.broadcast(int(myEvent::Basic::updateBasicConfig), config, sizeof(*config));
         //qDebug()<<"reply is "<<rep;
     }
 }
@@ -71,31 +102,45 @@ void ExternalControl::onSetCurrentConfig(){
 void ExternalControl::onResetCurrentConfig(){
     int robotID = 1;
     if (data){
-        //qDebug()<<"reset current config";
-        BasicExperimentConfig* config;
-        agent.request(robotID, int(myEvent::Basic::requestBasicConfig));
-        config = agent.get_more_reply<BasicExperimentConfig>();
-        if (config != nullptr)
-            *(BasicExperimentConfig*)data = *config;
+        if (data->useDefaultFromClient){
+            BasicExperimentConfig* config;
 
-        emit this->configRefreshed();
+            // 如果要恢复默认设置，则以Robot1的设置为准
+            agent.request(robotID, int(myEvent::Basic::requestBasicConfig));
+
+            config = agent.get_more_reply<BasicExperimentConfig>();
+            if (config != nullptr){
+                *(BasicExperimentConfig*)data = *config;
+                emit this->configRefreshed();
+            }
+            else{
+                qDebug()<<QString("Failed to get config from the robot");
+            }
+        }
+        else{
+            *(BasicExperimentConfig*)data = BasicExperimentConfig();
+            emit this->configRefreshed();
+        }
     }
 }
 
 
 void ExternalControl::onStartExperiment(){    
-    int robotID = 1;
-    int rep = agent.request(robotID, (int)myEvent::Basic::startExperiment);
-    if (rep != (int)myReply::good){
-        qDebug()<<"can not start experiment...";
-    }
+    //int robotID = 1;
+    //int rep = agent.request(robotID, (int)myEvent::Basic::startExperiment);
+    //if (rep != (int)myReply::good){
+    //    qDebug()<<"can not start experiment...";
+    //}
+    agent.broadcast(int(myEvent::Basic::startExperiment));
 }
+
 void ExternalControl::onStopExperiment(){
-    int robotID = 1;
-    int rep = agent.request(robotID, (int)myEvent::Basic::stopExperiment);
-    if (rep != (int)myReply::good){
-        qDebug()<<"can not stop experiment...";
-    }
+   // int robotID = 1;
+   // int rep = agent.request(robotID, (int)myEvent::Basic::stopExperiment);
+   // if (rep != (int)myReply::good){
+   //     qDebug()<<"can not stop experiment...";
+   // }
+   agent.broadcast(int(myEvent::Basic::stopExperiment));
 }
 
 /*
@@ -106,9 +151,9 @@ void ExternalControl::onToAutonomous(int robotID){
         if (data->experimentID == ExpUsing::expSwitch){
             int rep = agent.request(robotID, (int)myEvent::Switch::toAutonomous);
             if (rep != (int)myReply::good){
-                qDebug()<<"Fail to send toAuto Request";
+                qDebug()<<QString("Fail to send toAuto Request");
             }
-            qDebug()<<"toAuto Request Sended";
+            qDebug()<<QString("toAuto Request Sended");
         }
     }
 }
@@ -126,7 +171,7 @@ void ExternalControl::onToTeleoperation(int robotID, QPointF start, QPointF dx){
 
            int rep = agent.request(robotID, (int)myEvent::Switch::toTeleoperation, &user_target, sizeof(TraceDataEX));
            if (rep != (int)myReply::good){
-               qDebug()<<"Fail to send toTele Request";
+               qDebug()<<QString("Fail to send toTele Request");
            }
            qDebug()<<QString("toTele Request Sended (%1, %2) - %3").arg(user_target.x).arg(user_target.y).arg(user_target.heading);
         }
@@ -158,11 +203,14 @@ void ExternalControl::onNewUserTarget(int robotID, QPointF start, QPointF dx){
             user_target.secondsToDieOut = data->decay_time;
 
             int rep = agent.request(robotID, (int)myEvent::Shared::newUserTarget, &user_target, sizeof(TraceDataWithBlend));
-            data->addedUserTarget.push_back(rep);
-
-            qDebug()<<QString("The %1-th request added").arg(rep);
-            qDebug()<<"\t"<<QString("(%1, %2) - %3").arg(user_target.x).arg(user_target.y).arg(user_target.heading);
-            qDebug()<<"\t"<<QString("K = %1, decay = %2").arg(user_target.K).arg(user_target.secondsToDieOut);
+            if (rep != (int)myReply::good){
+                qDebug()<<QString("Failed to add new user target");
+            }
+            else{
+                qDebug()<<QString("The %1-th request added").arg(rep);
+                qDebug()<<"\t"<<QString("(%1, %2) - %3").arg(user_target.x).arg(user_target.y).arg(user_target.heading);
+                qDebug()<<"\t"<<QString("K = %1, decay = %2").arg(user_target.K).arg(user_target.secondsToDieOut);
+            }
         }
     }
 }
@@ -170,19 +218,11 @@ void ExternalControl::onNewUserTarget(int robotID, QPointF start, QPointF dx){
 void ExternalControl::onRemoveLastTarget(int robotID){
     if (data){
         if (data->experimentID == ExpUsing::expShared){
-            auto& tarList = data->addedUserTarget;
-            if (tarList.empty()){
-                qDebug()<<"No target has been added";
-                return ;
-            }
-            int target_id = tarList.back();
-            tarList.erase(tarList.begin() + tarList.size() - 1);
-
-            int rep = agent.request(robotID, int(myEvent::Shared::removeUserTarget), &target_id, sizeof(int));
+            int rep = agent.request(robotID, int(myEvent::Shared::removeUserTarget), nullptr, 0);
             if (rep != (int)myReply::good){
-                qDebug()<<"Fail to Remove Last User Target";
+                qDebug()<<QString("Fail to Remove The Earliest User Target");
             }
-            qDebug()<<"Last User Target Removed";
+            qDebug()<<QString("User Target Removed");
         }
     }
 }
@@ -190,7 +230,6 @@ void ExternalControl::onRemoveLastTarget(int robotID){
 /*
  * Tunnel Experiment
 */
-
 void ExternalControl::onNewTunnelTarget(int robotID, QPointF start, QPointF dx){
     if (data){
         if (data->experimentID == ExpUsing::expTunnel){
@@ -211,12 +250,23 @@ void ExternalControl::onNewTunnelTarget(int robotID, QPointF start, QPointF dx){
             user_target.q0 = 1;
             user_target.secondsToDieOut = data->decay_time;
 
-            int rep = agent.request(robotID, (int)myEvent::Tunnel::newUserTarget, &user_target, sizeof(TraceDataWithBlend));
-            data->addedUserTarget.push_back(rep);
 
-            qDebug()<<QString("The %1-th request added").arg(rep);
-            qDebug()<<"\t"<<QString("(%1, %2) - %3").arg(user_target.x).arg(user_target.y).arg(user_target.heading);
-            qDebug()<<"\t"<<QString("K = %1, decay = %2").arg(user_target.K).arg(user_target.secondsToDieOut);
+            int rep;
+            if (data->newTargetAsReplace){
+                rep = agent.request(robotID, (int)myEvent::Tunnel::replaceLastTarget, &user_target, sizeof(user_target));
+            }
+            else{
+                rep = agent.request(robotID, (int)myEvent::Tunnel::newUserTarget, &user_target, sizeof(TraceDataWithBlend));
+            }
+
+            if (rep != (int)myReply::good){
+                qDebug()<<QString("Failed to add new user target");
+            }
+            else{
+                qDebug()<<QString("The %1-th request added").arg(rep);
+                qDebug()<<"\t"<<QString("(%1, %2) - %3").arg(user_target.x).arg(user_target.y).arg(user_target.heading);
+                qDebug()<<"\t"<<QString("K = %1, decay = %2").arg(user_target.K).arg(user_target.secondsToDieOut);
+            }
         }
     }
 }
@@ -224,18 +274,11 @@ void ExternalControl::onNewTunnelTarget(int robotID, QPointF start, QPointF dx){
 void ExternalControl::onRemoveAllTunnelTarget(int robotID){
     if (data){
         if (data->experimentID == ExpUsing::expTunnel){
-            auto& tarList = data->addedUserTarget;
-            if (tarList.empty()){
-                qDebug()<<"No target has been added";
-                return ;
-            }
-            tarList.clear();
-
             int rep = agent.request(robotID, int(myEvent::Tunnel::removeAllUserTargets), nullptr, 0);
             if (rep != (int)myReply::good){
                 qDebug()<<"Fail to Remove Tunnel User Target";
             }
-            qDebug()<<"All Tunnel User Target Removed";
+            qDebug()<<QString("All Tunnel User Target Removed");
         }
     }
 }
@@ -264,7 +307,12 @@ void ExternalControl::onDirectBlend_NewCmd(int robotID, QPointF start, QPointF d
         new_cmd.q0      = 1;
 
         int rep = agent.request(robotID, (int)myEvent::DirectBlend::newCommand, &new_cmd, sizeof(DirectBlendData));
-        qDebug()<<QString("New direct blend data sended, K = %1").arg(Kusr);
+        if (rep != (int)myReply::good){
+            qDebug()<<QString("Failed to send new command");
+        }
+        else{
+            qDebug()<<QString("New direct blend data sended, K = %1").arg(Kusr);
+        }
     }
 }
 
@@ -288,20 +336,36 @@ void ExternalControl::onDirectBlend_ReplaceLast(int robotID, QPointF start, QPoi
         new_cmd.q0      = 1;
 
         int rep = agent.request(robotID, (int)myEvent::DirectBlend::replaceLastCommand, &new_cmd, sizeof(DirectBlendData));
-        qDebug()<<QString("New direct blend data sended, K = %1").arg(Kusr);
+        if (rep != (int)myReply::good){
+            qDebug()<<QString("Failed to replace last command");
+        }
+        else{
+            qDebug()<<QString("New direct blend data sended, K = %1").arg(Kusr);
+        }
+
     }
 }
 
 void ExternalControl::onDirectBlend_RemoveLast(int robotID){
     if (data){
         int rep = agent.request(robotID, (int)myEvent::DirectBlend::removeLastCommand, nullptr, 0);
-        qDebug()<<QString("Direct Blend : Remove Last");
+        if (rep != (int)myReply::good){
+            qDebug()<<QString("Failed to remove last command");
+        }
+        else{
+            qDebug()<<QString("Direct Blend : Remove Last");
+        }
     }
 }
 
 void ExternalControl::onDirectBlend_RemoveAll(int robotID){
     if (data){
         int rep = agent.request(robotID, (int)myEvent::DirectBlend::toAtuonomous, nullptr, 0);
-        qDebug()<<QString("Direct Blend : Remove All Targets");
+        if (rep != (int)myReply::good){
+            qDebug()<<"Failed to remove all command";
+        }
+        else{
+            qDebug()<<QString("Direct Blend : Remove All Targets");
+        }
     }
 }
