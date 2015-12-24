@@ -30,6 +30,7 @@ signals:
     void newScreenPrecision(int precision);
     void setupTunnel(double, double);
     void clearTunnel();
+    void programExit();
 
 public slots:
     void refreshBasicConfig();      // 根据CoreData更新各按钮、Slider的信息
@@ -52,6 +53,8 @@ public:
     float minDecayTime = 1;
     float maxDecayTime = 20;
 
+protected:
+    void closeEvent(QCloseEvent *event);
 private:
     Ui::ControlPanel *ui;
     QString textKaiShi;

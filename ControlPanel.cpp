@@ -98,12 +98,16 @@ ControlPanel::ControlPanel(QWidget *parent) :
     // 开始/结束实验按钮
     connect(ui->btnStartStop, &QPushButton::clicked, [&](){
         if (data){
-            if (data->experiment_running)
-                return this->beforeStopExperiment();
-            else
-                return this->beforeStartingExperiment();
+            if (data->experiment_running){
+                return beforeStopExperiment();
+            }
+            else{
+                return beforeStartingExperiment();
+            }
         }
     });
+
+
 
     // 根据设置更新界面中各按钮的情况
     // refreshBasicConfig(); // 这没有用 因为最开始的时候data是nullptr
@@ -112,6 +116,10 @@ ControlPanel::ControlPanel(QWidget *parent) :
 ControlPanel::~ControlPanel()
 {
     delete ui;
+}
+
+void ControlPanel::closeEvent(QCloseEvent *event){
+    emit programExit();
 }
 
 void ControlPanel::onWinSizeChanged(int pos){
@@ -157,13 +165,6 @@ void ControlPanel::beforeStartingExperiment(){
     ui->gpConfig->setDisabled(true);
     ui->btnStartStop->setText(QString("停止"));
 
-    // 每次开始实验前清空record
-    for (auto& rec : data->rec_state){
-        rec.clear();
-    }
-
-    // 记录实验的开始时间
-    data->t_start = std::chrono::steady_clock::now();
     data->experiment_running = true;
     emit this->startExperiment();
 }
@@ -174,8 +175,6 @@ void ControlPanel::beforeStopExperiment(){
     emit this->stopExperiment();
 
     data->experiment_running = false;
-    // 记录实验结束的时间
-    data->t_end = std::chrono::steady_clock::now();
 }
 
 void ControlPanel::refreshBasicConfig(){

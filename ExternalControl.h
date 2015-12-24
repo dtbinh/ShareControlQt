@@ -60,9 +60,13 @@ public slots:
     void onDirectBlend_RemoveLast(int robotID);
     void onDirectBlend_RemoveAll(int robotID);
 
+    // Used to close all programs
+    void onProgramExit();
+
 public:
     void connect(const client_data& client);
     void connect(const std::vector<client_data>& client_list, const std::set<int>& except = {});
+
 
     void start_updating(){
         isUpdating = true;

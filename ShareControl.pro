@@ -24,7 +24,8 @@ SOURCES += main.cpp\
     Util/CoordinateSystem.cpp \
     Util/RobotInfoItem.cpp \
     Util/UserArrow.cpp \
-    CoreData.cpp
+    CoreData.cpp \
+    ObstacleItem.cpp
 
 HEADERS  += \
     RobotItem.h \
@@ -36,7 +37,8 @@ HEADERS  += \
     Util/CoordinateSystem.h \
     Util/RobotInfoItem.h \
     Util/UserArrow.h \
-    CoreData.h
+    CoreData.h \
+    ObstacleItem.h
 
 FORMS    += mainwindow.ui \
             controlpanel.ui

@@ -8,6 +8,7 @@
 #include "Util/RobotInfoItem.h"
 #include "Util/UserArrow.h"
 #include "CoreData.h"
+#include "ObstacleItem.h"
 
 struct RobotItem{
     RobotItem(){}
@@ -69,6 +70,15 @@ public slots:
             this->removeItem(item);
     }
 
+    // 画障碍物
+    void addObstacles(std::vector<ObstacleItem>& obstacles){
+        for(auto& ob: obstacles)
+            addObstacles(ob);
+    }
+    void addObstacles(ObstacleItem& obstacle){
+        this->addItem(obstacle.make_item(myCoordination).get());
+    }
+
 public:
     bool mousePressed = false;
     bool doubleClicked = false;
@@ -96,12 +106,19 @@ class MainWindow;
 
 class MainWindow : public QGraphicsView
 {
+    Q_OBJECT
 public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
+signals:
+    void programExit();
+
 protected:
     void wheelEvent(QWheelEvent * event);
+    void closeEvent(QCloseEvent * event){
+        emit programExit();
+    }
 
 private:
     Ui::MainWindow *ui;

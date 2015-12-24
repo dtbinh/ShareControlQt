@@ -292,7 +292,7 @@ void MainScene::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event){
     QGraphicsScene::mouseDoubleClickEvent(event);
 }
 
-
+// 更新Robot位置于此
 void MainScene::updateRobot(int ID, qreal x, qreal y, qreal heading){
     auto robot = this->getRobot(ID);
     if (robot != nullptr){

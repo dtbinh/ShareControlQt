@@ -53,17 +53,24 @@ void onExperimentStart(MainWindow& w, MainScene&s, ControlPanel& c, ExternalCont
                          &ext,  &ExternalControl::onDirectBlend_NewCmd);
     }
 
+    data.resetRecords();
+    data.generateObstacles();
+    s.addObstacles(data.obstacles);
+
     s.isTraceMode = false;
     ext.isUpdating = true;
     ext.onStartExperiment();
     s.setSceneMode(SceneMode::control_interface);
+    data.t_start = std::chrono::steady_clock::now();
 }
 
 
 void onExperimentStop(MainWindow& w, MainScene&s, ControlPanel& c, ExternalControl& ext, CoreData& data){
+    data.t_end = std::chrono::steady_clock::now();
     ext.onStopExperiment();
     ext.isUpdating = false;
     s.isTraceMode = true;
+
     QObject::disconnect(&s, &MainScene::newUserDoubleClick, 0, 0);
     QObject::disconnect(&s, &MainScene::newUserSlideMotion, 0, 0);
     QObject::connect(&s,   &MainScene::newUserSlideMotion,
@@ -71,6 +78,11 @@ void onExperimentStop(MainWindow& w, MainScene&s, ControlPanel& c, ExternalContr
 
     if (data.isPlacingRobot)
         s.setSceneMode(SceneMode::placing_robots);
+
+    // 分析、存储数据
+    //data.analyzeData();
+    data.saveExperimentData();
+    data.obstacles.clear();
 }
 
 void connectPannel(ControlPanel& c, ExternalControl& ext){
@@ -129,12 +141,24 @@ int main(int argc, char *argv[])
     ext.agent.me = client_data{"127.0.0.1", 0, 5544, 5545};
     //ext.connect({"127.0.0.1", 1, 4455, 4456});
 
-    ext.connect({ client_data{"127.0.0.1", 1, 4455, 4456},  client_data{"127.0.0.1", 2, 4457, 4458}});
+    //ext.connect({ client_data{"127.0.0.1", 1, 4455, 4456},  client_data{"127.0.0.1", 2, 4457, 4458}});
+    ext.connect({ client_data{"127.0.0.1", 1, 4455, 4456},
+                  client_data{"127.0.0.1", 2, 4457, 4458},
+                  client_data{"127.0.0.1", 3, 4459, 4460},
+                  client_data{"127.0.0.1", 4, 4461, 4462}});
 
     // Pannel之间的连接
     connectPannel(c, ext);
     connectPannel(c, s);
     connectPannel(ext, s, data);
+
+    // 设置退出信号
+    QObject::connect(&c,  &ControlPanel::programExit,
+                     &w,  &MainWindow::close);
+    QObject::connect(&c,  &ControlPanel::programExit,
+                     &ext,&ExternalControl::onProgramExit);
+    QObject::connect(&w,  &MainWindow::programExit,
+                     &c,  &ControlPanel::close);
 
     // 设置模式->开始实验
     QObject::connect(&c,  &ControlPanel::startExperiment,
@@ -151,11 +175,15 @@ int main(int argc, char *argv[])
     data.robots.push_back(s.addRobot(2, 0, 1, 90));
     data.robots.push_back(s.addRobot(3, 1, 1, 90));
     data.robots.push_back(s.addRobot(4, 1, 0, 90));
-    data.rec_state.push_back({});
-    data.rec_state.push_back({});
-    data.rec_state.push_back({});
-    data.rec_state.push_back({});
 
+    // 测试：放一些障碍物....
+    /*
+    data.obstacles = { {0, 0, 1,  1, ObstacleShape::Circle},
+                       {2, 0, 1, 0.5, ObstacleShape::Square},
+                       {0, 2, 0.5, 1, ObstacleShape::Circle}
+                      };
+    s.addObstacles(data.obstacles);
+    */
     w.show();
     c.show();
     return a.exec();

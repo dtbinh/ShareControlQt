@@ -20,7 +20,7 @@ public:
     bool validAxisHeading();
     bool buildSystem();
 
-    qreal UnitSize() const;
+    qreal UnitSize() const;     // 长度1对应于屏幕坐标中多大
     AxisHeading XHeading() const;
     AxisHeading YHeading() const;
 

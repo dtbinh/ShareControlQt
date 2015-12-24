@@ -4,6 +4,10 @@
 ExternalControl::ExternalControl(QObject *parent) : QObject(parent)
 {}
 
+void  ExternalControl::onProgramExit(){
+    agent.broadcast(int(myEvent::Basic::programExit), nullptr, 0);
+    qDebug()<<QString("programExit signal sended");
+}
 
 void ExternalControl::connect(const client_data& target){
     agent.server_start();
@@ -31,34 +35,24 @@ void ExternalControl::connect(const std::vector<client_data>& client_list, const
 
 
 void ExternalControl::handle_sub(int ID, int type, void* _data, size_t size){
-    using std::chrono::steady_clock;
-    using std::chrono::milliseconds;
-    using std::chrono::duration_cast;
-    auto tnow = std::chrono::steady_clock::now();
 
     myBroadcast::Basic _type = myBroadcast::Basic(type);
-    int index = ID - 1;
-    if (index >= data->rec_state.size()){
-        qDebug()<<QString("Weired");
-    }
-
     if (_type == myBroadcast::Basic::state){
         if (size == sizeof(RobotStateData) && this->isUpdating){
             RobotStateData* pstate = (RobotStateData*)_data;
+            if (data)
+                data->onNewRobotPositions(ID, *pstate);
 
             // To be tested here
-            data->rec_state[index].push_back(*pstate);
+            // data->rec_state[index].push_back(*pstate);
             // MSVC2013's duration cast may be faulty
-            data->rec_state[index].back().t_now = duration_cast<milliseconds>(tnow - data->t_start);
+            // data->rec_state[index].back().t_now = duration_cast<milliseconds>(tnow - data->t_start);
             emit this->newPosition(ID, pstate->x, pstate->y, pstate->heading, pstate->velocity);
 
             //qDebug()<<QString("new state %1, (%2, %3) - %4, %5").arg(ID)
             //                                                    .arg(pstate->x).arg(pstate->y)
             //                                                    .arg(pstate->heading).arg(pstate->velocity);
         }
-        //else{
-        //    qDebug()<<"Unrecognized State Broadcast";
-       // }
     }
     else{
         qDebug()<<"Strange Broadcast Received";
@@ -263,7 +257,7 @@ void ExternalControl::onNewTunnelTarget(int robotID, QPointF start, QPointF dx){
                 qDebug()<<QString("Failed to add new user target");
             }
             else{
-                qDebug()<<QString("The %1-th request added").arg(rep);
+                qDebug()<<QString("Robot %1, request added").arg(robotID);
                 qDebug()<<"\t"<<QString("(%1, %2) - %3").arg(user_target.x).arg(user_target.y).arg(user_target.heading);
                 qDebug()<<"\t"<<QString("K = %1, decay = %2").arg(user_target.K).arg(user_target.secondsToDieOut);
             }
