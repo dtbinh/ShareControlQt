@@ -8,14 +8,14 @@ void CoreData::generateObstacles(){
     if (experimentID == ExpUsing::expTunnel){
         obstacles.clear();
         double R = tunnel_R;
-        double r = tunnel_r;
+        double r = tunnel_r*1.1;
 
-        obstacles = { {-(R+r), 0, r,  r, ObstacleShape::Circle},
-                       {-R/2, (R+r), r, r, ObstacleShape::Circle},
-                       {R/2, (R+r), r, r, ObstacleShape::Circle},
+        obstacles = { {-(R+r/2), 0, r/2,  r/2, ObstacleShape::Circle},
+                       {-R/2, (R+r/2), r/2, r/2, ObstacleShape::Circle},
+                       {R/2, (R+r/2), r/2, r/2, ObstacleShape::Circle},
                        {R,  0, r/4, R, ObstacleShape::Square},
-                       {R/2, -(R+r), r, r, ObstacleShape::Circle},
-                       {-R/2, -(R-r), r, r, ObstacleShape::Circle},
+                       {R/2, -(R+r/2), r/2, r/2, ObstacleShape::Circle},
+                       {-R/2, -(R-r/2), r/2, r/2, ObstacleShape::Circle},
                       };
     }
 }
