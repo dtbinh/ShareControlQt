@@ -26,62 +26,57 @@ RobotItem::RobotItem(int _ID, pGraphicsRobotItem &&_robot, pGraphicsRobotInfoIte
 MainScene::MainScene(QObject *parent) :
     QGraphicsScene(parent)
 {
-    myCoordination = new CoordinateSystem(50);
+    myCoordination = new CoordinateSystem(100);
     myCoordination->setAxisHedaing(AxisHeading::right, AxisHeading::up);
 }
 
 MainScene::~MainScene(){
-    for (auto& item : robots){
-        this->removeItem(item.robot.get());
-        // 因为robot是info的parent
-        // 所以删了robot后面的也被删了
-        //this->removeItem(item.info.get());
-    }
+
 }
 
 pGraphicsRobotItem MainScene::getRobot(int id){
-    auto it = IDtoIndex.find(id);
-    if (it == IDtoIndex.end())
+    auto it = data->IDtoIndex.find(id);
+    if (it == data->IDtoIndex.end())
         return nullptr;
     size_t index = it->second;
-    return robots[index].robot;
+    return data->robots[index].robot;
 }
 RobotItem* MainScene::getRobotItem(int id){
-    auto it = IDtoIndex.find(id);
-    if (it == IDtoIndex.end())
+    auto it = data->IDtoIndex.find(id);
+    if (it == data->IDtoIndex.end())
         return nullptr;
     size_t index = it->second;
-    return &robots[index];
+    return &(data->robots[index]);
 }
 RobotItem* MainScene::getNearestRobot(QPointF ref){
-    if (robots.size() == 0) return nullptr;
+    if (data->robots.size() == 0) return nullptr;
 
     auto distanceTo = [&](size_t k)->double{
-        auto p = robots[k].robot->pos() - ref;
-        return p.x() * p.x() + p.y() * p.y();
+        auto p = data->robots[k].robot->pos() - ref;
+        return sqrt(p.x() * p.x() + p.y() * p.y());
     };
 
     size_t index = 0;
     double best = distanceTo(0);
-    for (size_t i=1; i < robots.size(); ++i){
+    for (size_t i=1; i < data->robots.size(); ++i){
         double d = distanceTo(i);
         if (d < best){
             best = d;
             index = i;
         }
     }
-    return &robots[index];
+    return &(data->robots[index]);
 }
 QPointF MainScene::positionOf(int id) const{
-    size_t index = IDtoIndex.at(id);
-    return robots[index].robot->RealPos();
+    size_t index = data->IDtoIndex.at(id);
+    return data->robots[index].robot->RealPos();
 }
 qreal MainScene::headingOf(int id) const{
-    size_t index = IDtoIndex.at(id);
-    return robots[index].robot->Heading();
+    size_t index = data->IDtoIndex.at(id);
+    return data->robots[index].robot->Heading();
 }
-
-pGraphicsRobotItem MainScene::addRobot(int ID, qreal x, qreal y, qreal heading){
+/*
+pGraphicsRobotItem MainScene::addRobot(int ID, qreal x, qreal y, qreal heading, bool show_info){
     auto it = IDtoIndex.find(ID);
     if (it != IDtoIndex.end())
         return nullptr;
@@ -97,6 +92,7 @@ pGraphicsRobotItem MainScene::addRobot(int ID, qreal x, qreal y, qreal heading){
     auto info = new GraphicsRobotInfoItem(item);
     this->addItem(item);
     this->addItem(info);
+    if (!show_info) info->hide();
     robots.push_back({ID,
                       std::move(pGraphicsRobotItem(item)),
                       std::move(pGraphicsRobotInfoItem(info))});
@@ -106,7 +102,7 @@ pGraphicsRobotItem MainScene::addRobot(int ID, qreal x, qreal y, qreal heading){
 SceneMode MainScene::getSceneMode() const{
     return this->mode;
 }
-
+*/
 /*
  * SceneMode Change
  */
@@ -115,6 +111,13 @@ void MainScene::onSetupTunnel(double R, double r){
     if (traceLine){
         this->removeItem(traceLine);
     }
+
+    // 画障碍物
+    if (data->obstacles.empty())
+        data->generateObstacles();
+    addObstacles(data->obstacles);
+
+    // 画轨道
     if (tunnelLines.empty()){
         QPen pen;
         QGraphicsItem* added_line;
@@ -159,21 +162,29 @@ void MainScene::onSetupTunnel(double R, double r){
 void MainScene::setSceneMode(SceneMode modeNew){
     if (modeNew != mode){
         if (modeNew == SceneMode::control_interface){
-            for (auto& it : robots)
+            for (auto& it : data->robots){
                 it.robot->setFlag(QGraphicsItem::ItemIsMovable, false);
+                // it.robot->setSelected(false);
+                it.robot->setHighlight(false);
+            }
             mousePressed = false;
+            robotSelected = nullptr;
         }
         if (modeNew == SceneMode::placing_robots){
             if (userArrow.scene())
                 this->removeItem(&userArrow);
 
-            if (robotSelected != nullptr)
-                robotSelected->robot->setSelected(false);
+            if (robotSelected != nullptr){
+                robotSelected->robot->setHighlight(false);
+                // robotSelected->robot->setSelected(false);
+            }
 
-            for (auto& it : robots)
+            for (auto& it : data->robots)
                 it.robot->setFlag(QGraphicsItem::ItemIsMovable, true);
         }
         mode = modeNew;
+
+        update();   // 更新整个视图
         qDebug() << "Mode changed to " << getModeString(mode);
     }
 }
@@ -182,13 +193,17 @@ void MainScene::mousePressEvent(QGraphicsSceneMouseEvent *mouseEvent){
     if (mode == SceneMode::control_interface){
         if (mouseEvent->button() == Qt::LeftButton){
             // 找到被选中的Robot
-            if (robotSelected != nullptr)
-                robotSelected->robot->setSelected(false);
+            if (robotSelected != nullptr){
+                robotSelected->robot->setHighlight(false);
+                // robotSelected->robot->setSelected(false);
+            }
             robotSelected = getNearestRobot(mouseEvent->scenePos());
+
             if (robotSelected != nullptr){
                 // 如果能找到才合法
                 mousePressed = true;
-                robotSelected->robot->setSelected(true);
+                // robotSelected->robot->setSelected(true);
+                robotSelected->robot->setHighlight(true);
 
                 // 设置User箭头
                 userArrow.setEndpoint(0, 0);
@@ -197,6 +212,7 @@ void MainScene::mousePressEvent(QGraphicsSceneMouseEvent *mouseEvent){
                 userArrow.setPos(mouseEvent->scenePos());
             }
         }
+        mouseEvent->accept();
     }
     return QGraphicsScene::mousePressEvent(mouseEvent);
 }
@@ -204,6 +220,7 @@ void MainScene::mousePressEvent(QGraphicsSceneMouseEvent *mouseEvent){
 void MainScene::mouseMoveEvent(QGraphicsSceneMouseEvent *mouseEvent){
     if (mode == SceneMode::control_interface && mousePressed){
         userArrow.setEndpoint(mouseEvent->scenePos() - userArrow.pos());
+        mouseEvent->accept();
     }
     else QGraphicsScene::mouseMoveEvent(mouseEvent);
 }
@@ -243,7 +260,8 @@ void MainScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *mouseEvent){
 
                 if (robotSelected != nullptr){
                     emit this->newUserDoubleClick(robotSelected->ID);
-                    robotSelected->robot->setSelected(false);
+                    // robotSelected->robot->setSelected(false);
+                    robotSelected->robot->setHighlight(false);
                     robotSelected = false;
                 }
             }
@@ -277,10 +295,12 @@ void MainScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *mouseEvent){
                 //                    <<(invert.map(userArrow.Endpoint())/ myCoordination->UnitSize());
             }
             if (robotSelected != nullptr){
-                robotSelected->robot->setSelected(false);
+                // robotSelected->robot->setSelected(false);
+                robotSelected->robot->setHighlight(false);
                 robotSelected = nullptr;
             }
         }
+        mouseEvent->accept();
     }
     else QGraphicsScene::mouseReleaseEvent(mouseEvent);
 }
@@ -288,6 +308,7 @@ void MainScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *mouseEvent){
 void MainScene::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event){
     if (event->button() == Qt::LeftButton){
         doubleClicked = true;
+        event->accept();
     }
     QGraphicsScene::mouseDoubleClickEvent(event);
 }

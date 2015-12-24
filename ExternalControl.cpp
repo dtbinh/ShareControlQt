@@ -4,7 +4,7 @@
 ExternalControl::ExternalControl(QObject *parent) : QObject(parent)
 {}
 
-void  ExternalControl::onProgramExit(){
+void  ExternalControl::onCloseClients(){
     agent.broadcast(int(myEvent::Basic::programExit), nullptr, 0);
     qDebug()<<QString("programExit signal sended");
 }

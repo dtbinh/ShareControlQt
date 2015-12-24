@@ -10,14 +10,6 @@
 #include "CoreData.h"
 #include "ObstacleItem.h"
 
-struct RobotItem{
-    RobotItem(){}
-    RobotItem(int _ID, pGraphicsRobotItem&& _robot, pGraphicsRobotInfoItem&& _info);
-
-    int ID = -1;
-    pGraphicsRobotItem     robot = nullptr;
-    pGraphicsRobotInfoItem info  = nullptr;
-};
 
 enum class SceneMode{
     control_interface,  // 发送User箭头，自动确定离哪个robot最近 不能移动
@@ -53,7 +45,7 @@ signals:
 
 public slots:
     // 添加新的Robot
-    pGraphicsRobotItem addRobot(int ID, qreal x = 0, qreal y = 0, qreal heading = 90);
+    // pGraphicsRobotItem addRobot(int ID, qreal x = 0, qreal y = 0, qreal heading = 90, bool show_info = true);
 
     // 设置Robot位置
     void updateRobot(int robotID, qreal x, qreal y, qreal heading);
@@ -70,6 +62,7 @@ public slots:
             this->removeItem(item);
     }
 
+public:
     // 画障碍物
     void addObstacles(std::vector<ObstacleItem>& obstacles){
         for(auto& ob: obstacles)
@@ -77,6 +70,17 @@ public slots:
     }
     void addObstacles(ObstacleItem& obstacle){
         this->addItem(obstacle.make_item(myCoordination).get());
+    }
+
+    void addRobot(RobotItem& robot){
+        robot.setCoordination(myCoordination);  // 用新坐标系
+        this->addItem(robot.robot.get());
+        this->addItem(robot.info.get());
+    }
+    void addRobot(std::vector<RobotItem>& robots){
+        for (auto& rbt : robots){
+            addRobot(rbt);
+        }
     }
 
 public:
@@ -90,10 +94,6 @@ public:
     RobotItem* robotSelected = nullptr;
 
     SceneMode mode = SceneMode::placing_robots;
-
-    std::map<int, size_t>  IDtoIndex;
-    std::vector<RobotItem> robots;
-
     CoordinateSystem* myCoordination = nullptr;
 
     CoreData* data = nullptr;

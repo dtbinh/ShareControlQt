@@ -10,9 +10,9 @@
 
 struct StateRecord : public RobotStateData{
     StateRecord(){}
-    StateRecord(const RobotStateData& dt) : RobotStateData(dt){}
+    StateRecord(const RobotStateData& dt) : RobotStateData(dt), inside_obstacle(-1){}
     StateRecord(const RobotStateData& dt, std::chrono::milliseconds t)
-        :RobotStateData(dt), t_now(t){}
+        :RobotStateData(dt), t_now(t), inside_obstacle(-1){}
     std::chrono::milliseconds t_now;
     int inside_obstacle = -1;
 };
@@ -45,6 +45,10 @@ public:
 public:
     // 产生障碍物于obstacles中
     void generateObstacles();
+
+    // 添加机器人
+    void add_robot(int ID, qreal x = 0, qreal y = 0, qreal heading = 90, bool show_info = true);
+
     // 重置记录
     void resetRecords(){
         for (auto& rec : rec_state){
@@ -60,7 +64,9 @@ public:
     // 分析数据
     void analyzeData();
 
-    std::vector<pGraphicsRobotItem> robots;
+    //std::vector<pGraphicsRobotItem> robots;         // 这里应该放的是RobotItem才对...
+    std::map<int, size_t>           IDtoIndex;
+    std::vector<RobotItem>          robots;
     std::vector<ObstacleItem>       obstacles;
 
     // 记录实验过程

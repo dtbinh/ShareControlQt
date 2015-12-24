@@ -54,8 +54,6 @@ void onExperimentStart(MainWindow& w, MainScene&s, ControlPanel& c, ExternalCont
     }
 
     data.resetRecords();
-    data.generateObstacles();
-    s.addObstacles(data.obstacles);
 
     s.isTraceMode = false;
     ext.isUpdating = true;
@@ -80,8 +78,8 @@ void onExperimentStop(MainWindow& w, MainScene&s, ControlPanel& c, ExternalContr
         s.setSceneMode(SceneMode::placing_robots);
 
     // 分析、存储数据
-    //data.analyzeData();
     data.saveExperimentData();
+    data.analyzeData();
     data.obstacles.clear();
 }
 
@@ -95,9 +93,9 @@ void connectPannel(ControlPanel& c, ExternalControl& ext){
 }
 
 void connectPannel(ControlPanel &c, MainScene& s){
-    QObject::connect(&c,   &ControlPanel::setupTunnel,
+    QObject::connect(&c,   &ControlPanel::setupForTunnel,
                      &s,   &MainScene::onSetupTunnel);
-    QObject::connect(&c,   &ControlPanel::clearTunnel,
+    QObject::connect(&c,   &ControlPanel::clearForTunnel,
                      &s,   &MainScene::onClearTunnel);
     QObject::connect(&c,  &ControlPanel::intoRobotMovingMode,
                      &s,  &MainScene::intoPlaceRobot);
@@ -155,8 +153,8 @@ int main(int argc, char *argv[])
     // 设置退出信号
     QObject::connect(&c,  &ControlPanel::programExit,
                      &w,  &MainWindow::close);
-    QObject::connect(&c,  &ControlPanel::programExit,
-                     &ext,&ExternalControl::onProgramExit);
+    QObject::connect(&c,  &ControlPanel::closeClients,
+                     &ext,&ExternalControl::onCloseClients);
     QObject::connect(&w,  &MainWindow::programExit,
                      &c,  &ControlPanel::close);
 
@@ -171,11 +169,20 @@ int main(int argc, char *argv[])
     // 放机器人
     data.useDefaultFromClient = true;
     data.newTargetAsReplace   = true;
-    data.robots.push_back(s.addRobot(1, 0, 0, 90));
-    data.robots.push_back(s.addRobot(2, 0, 1, 90));
-    data.robots.push_back(s.addRobot(3, 1, 1, 90));
-    data.robots.push_back(s.addRobot(4, 1, 0, 90));
+    bool show_info = false;
 
+    data.add_robot(1, 0, 0, 90, show_info);
+    data.add_robot(2, 0, 1, 90, show_info);
+    data.add_robot(3, 1, 1, 90, show_info);
+    data.add_robot(4, 1, 0, 90, show_info);
+    s.addRobot(data.robots);
+
+    /*
+    data.robots.push_back(s.addRobot(1, 0, 0, 90, show_info));
+    data.robots.push_back(s.addRobot(2, 0, 1, 90, show_info));
+    data.robots.push_back(s.addRobot(3, 1, 1, 90, show_info));
+    data.robots.push_back(s.addRobot(4, 1, 0, 90, show_info));
+    */
     // 测试：放一些障碍物....
     /*
     data.obstacles = { {0, 0, 1,  1, ObstacleShape::Circle},

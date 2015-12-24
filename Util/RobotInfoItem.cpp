@@ -1,5 +1,5 @@
 #include "RobotInfoItem.h"
-
+#include "..\RobotItem.h"
 
 GraphicsRobotInfoItem::GraphicsRobotInfoItem(GraphicsRobotItem* parent):
     QGraphicsSimpleTextItem(parent)

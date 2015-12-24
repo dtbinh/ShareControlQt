@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>192</width>
-    <height>410</height>
+    <height>439</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -493,6 +493,32 @@
      <set>Qt::AlignCenter</set>
     </property>
    </widget>
+  </widget>
+  <widget class="QPushButton" name="btnExitAll">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>400</y>
+     <width>75</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>退出所有</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="btnExitMe">
+   <property name="geometry">
+    <rect>
+     <x>105</x>
+     <y>400</y>
+     <width>75</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>退出界面</string>
+   </property>
   </widget>
  </widget>
  <resources/>

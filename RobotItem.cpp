@@ -21,7 +21,8 @@ void GraphicsRobotItem::paint(
 
     //QPen pen;
     //QBrush brush;
-    if (this->isSelected()){
+    //this->isSelected() ||
+    if (this->highlight){
         //painter->setPen(Qt::darkCyan);
         painter->setBrush(Qt::yellow);
     }
@@ -80,8 +81,12 @@ qreal GraphicsRobotItem::Radius() const{
 }
 
 void GraphicsRobotItem::setCoordination(CoordinateSystem *trans){
-    this->prepareGeometryChange();
-    coordination = trans;
+    qreal   real_heading = this->Heading();
+    QPointF real_pos = this->RealPos(); // 记录当前的真实位置
+    this->prepareGeometryChange();      // 通知画布准备坐标变换
+    coordination = trans;             // 更新坐标系
+    this->setRealPos(real_pos);         // 保证真实坐标不变
+    this->setHeading(real_heading);     // 保证真实姿态不变
 }
 CoordinateSystem* GraphicsRobotItem::Coordination() const{
     return coordination;

@@ -2,8 +2,10 @@
 #define GRAPHICSROBOTINFOITEM_H
 #pragma warning(disable: 4819 4100)
 
-#include "../RobotItem.h"
+#include <QGraphicsSimpleTextItem>
+#include <memory>
 
+class GraphicsRobotItem;
 class GraphicsRobotInfoItem : public QGraphicsSimpleTextItem{
 public:
     explicit GraphicsRobotInfoItem(GraphicsRobotItem* parent);

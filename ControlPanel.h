@@ -28,9 +28,10 @@ signals:
     void startExperiment();
     void stopExperiment();
     void newScreenPrecision(int precision);
-    void setupTunnel(double, double);
-    void clearTunnel();
-    void programExit();
+    void setupForTunnel(double, double);
+    void clearForTunnel();
+    void programExit();     // 自己退出时的信号
+    void closeClients();    // 关闭下位Client
 
 public slots:
     void refreshBasicConfig();      // 根据CoreData更新各按钮、Slider的信息

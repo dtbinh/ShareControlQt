@@ -76,8 +76,8 @@ ControlPanel::ControlPanel(QWidget *parent) :
         if (data){
             // 为兼容以前的实验(只取第一个Robot的位置)
             // (后续实验中robots初始位置不由此设置)
-            QPointF pos   = data->robots[0]->RealPos();
-            qreal heading = data->robots[0]->Heading();
+            QPointF pos   = data->robots[0].RealPos();
+            qreal heading = data->robots[0].Heading();
             data->robotStartState.x       = pos.x();
             data->robotStartState.y       = pos.y();
         }
@@ -86,9 +86,9 @@ ControlPanel::ControlPanel(QWidget *parent) :
         // 清除、显示Tunnel
         if (data->experimentID == ExpUsing::expTunnel){
             // tunnel_R, tunnel_r是在client端设置的
-            emit this->setupTunnel(data->tunnel_R, data->tunnel_r);
+            emit this->setupForTunnel(data->tunnel_R, data->tunnel_r);
         }
-        else emit this->clearTunnel();
+        else emit this->clearForTunnel();
     });
 
     connect(ui->btnResetConfig, &QPushButton::clicked,  [=](){
@@ -107,7 +107,16 @@ ControlPanel::ControlPanel(QWidget *parent) :
         }
     });
 
-
+    // 退出程序按钮
+    connect(ui->btnExitMe, &QPushButton::clicked, [&](){
+        emit programExit();
+        this->close();
+    });
+    connect(ui->btnExitAll, &QPushButton::clicked, [&](){
+        emit closeClients();
+        emit programExit();
+        this->close();
+    });
 
     // 根据设置更新界面中各按钮的情况
     // refreshBasicConfig(); // 这没有用 因为最开始的时候data是nullptr

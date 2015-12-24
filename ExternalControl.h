@@ -61,7 +61,7 @@ public slots:
     void onDirectBlend_RemoveAll(int robotID);
 
     // Used to close all programs
-    void onProgramExit();
+    void onCloseClients();
 
 public:
     void connect(const client_data& client);
