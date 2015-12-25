@@ -3,6 +3,12 @@
 
 CoordinateSystem GraphicsRobotItem::defaultCoordination = CoordinateSystem(100);
 
+QPainterPath GraphicsRobotItem::shape() const{
+    QPainterPath path;
+    path.addEllipse(boundingRect());
+    return path;
+}
+
 void GraphicsRobotItem::paint(
         QPainter *painter,
         const QStyleOptionGraphicsItem *option,
@@ -23,13 +29,13 @@ void GraphicsRobotItem::paint(
     //QBrush brush;
     //this->isSelected() ||
     if (this->highlight){
-        //painter->setPen(Qt::darkCyan);
-        painter->setBrush(Qt::yellow);
+        painter->setPen(QPen(QColor(0, 0, 255, 200), 2));
     }
     else{
-        //painter->setPen(Qt::black);
-        painter->setBrush(Qt::NoBrush);
+        painter->setPen(Qt::black);
+        //painter->setBrush(Qt::NoBrush);
     }
+    painter->setBackgroundMode(Qt::TransparentMode);
     painter->drawEllipse(QPointF(0,0), _radius, _radius);
     painter->drawLine(QPointF(0,0), _radius * QPointF(cos(_heading), sin(_heading)));
 }
@@ -41,7 +47,7 @@ GraphicsRobotItem::GraphicsRobotItem(QGraphicsItem *parent): QGraphicsItem(paren
 QRectF GraphicsRobotItem::boundingRect() const{
     qreal _radius = radius * (coordination ? coordination->UnitSize()
                                            : defaultCoordination.UnitSize());
-    QRectF _boundingRect = {-_radius, -_radius, 2 * _radius, 2 * _radius};
+    QRectF _boundingRect = {-_radius*1.1, -_radius*1.1, 2.2 * _radius, 2.2 * _radius};
     return coordination ? coordination->mapRect(_boundingRect) :
                           defaultCoordination.mapRect(_boundingRect);
 }
@@ -58,7 +64,8 @@ void GraphicsRobotItem::setRealPos(const QPointF& pos){
                               : defaultCoordination.UnitSize();
     QPointF p2 = coordination ? coordination->map(pos) * unit
                               : defaultCoordination.map(pos) * unit;
-    return this->setPos(p2);
+    this->setPos(p2);
+    return;
 }
 void GraphicsRobotItem::setRealPos(qreal x, qreal y){
     return this->setRealPos(QPointF(x, y));

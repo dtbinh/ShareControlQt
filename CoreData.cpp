@@ -59,6 +59,11 @@ void CoreData::onNewRobotPositions(int ID, const RobotStateData& state){
         return;
     }
 
+    int last_inside = -1, this_inside = -1;
+    if (!rec_state[index].empty()){
+         last_inside = rec_state[index].back().inside_obstacle;
+    }
+
     rec_state[index].push_back(state);
     rec_state[index].back().t_now = duration_cast<milliseconds>(tnow - t_start);
     rec_state[index].back().inside_obstacle = -1;
@@ -66,8 +71,15 @@ void CoreData::onNewRobotPositions(int ID, const RobotStateData& state){
     for (size_t i =0;i < obstacles.size();++i){
         if (obstacles[i].contains(state.x, state.y)){
             rec_state[index].back().inside_obstacle = i;
+            obstacles[i].pItem->highlight = true;
+            obstacles[i].pItem->update();
+            this_inside = i;
             break;  // 不会在两个Obstacle里面的
         }
+    }
+    if (last_inside != -1 && last_inside != this_inside){
+        obstacles[last_inside].pItem->highlight = false;
+        obstacles[last_inside].pItem->update();
     }
 }
 
@@ -85,6 +97,7 @@ void CoreData::saveExperimentData(){
             }
             QTextStream out(&file);
             auto& rec = rec_state[robot_index];
+            out << "t  x  y  th  vel  obstacle" << endl;
             for (size_t i=0;i<rec.size();++i){
                 out << QString("%1  %2  %3  %4  %5  %6")
                        .arg(rec[i].t_now.count(), -4)
@@ -96,7 +109,31 @@ void CoreData::saveExperimentData(){
                 out << endl;
             }
             out.flush();
+            file.close();
         }
+    }
+    if (!rec_user.empty()){
+        qDebug()<<QString("total user_input record : %1").arg(rec_user.size());
+        QString fname = QString("expDataUser.txt");
+        QFile file(fname);
+        if (!file.open(QIODevice::WriteOnly)){
+            qDebug()<<"Failed to open file";
+            return;
+        }
+        QTextStream out(&file);
+        out << "t  ID  type  x  y  dx  dy"<<endl;
+        for (size_t i=0;i<rec_user.size();++i){
+            auto& rec = rec_user[i];
+            out << QString("%1  %2  %3  %4  %5  %6  %7")
+                   .arg(rec.t_now.count(), -4)
+                   .arg(rec.robotID)
+                   .arg(int(rec.type))
+                   .arg(rec.x, -5, 'f', 5).arg(rec.y, -5, 'f', 5)
+                   .arg(rec.dx, -5, 'f', 5).arg(rec.dy, -5, 'f', 5);
+            out << endl;
+        }
+        out.flush();
+        file.close();
     }
 }
 
@@ -114,8 +151,8 @@ void CoreData::analyzeData(){
 
             time_all = duration_cast<milliseconds>(t_end - t_start);
 
+            // 计算每个Robot有多长时间在障碍里面
             for (size_t robot_index = 0;robot_index < rec_state.size(); ++robot_index){
-
                 std::vector<StateRecord>& rec = rec_state[robot_index];
 
                 /*
@@ -175,6 +212,16 @@ void CoreData::analyzeData(){
                           .arg(time_bad[robot_index].count())
                           .arg(time_all.count());
             }
+
+            // 求均值
+            double total_inside = 0;
+            for (auto& t : time_bad)
+                total_inside += t.count();
+            total_inside /= time_bad.size();
+            qDebug()<<QString("Average : time inside obstacle = %1 ms / %2 ms (%3 %%)")
+                      .arg(int(total_inside+0.5))
+                      .arg(time_all.count())
+                      .arg(int(total_inside / time_all.count() * 100 + 0.5));
         }
     }
     catch (std::exception e){

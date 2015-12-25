@@ -17,9 +17,14 @@ struct StateRecord : public RobotStateData{
     int inside_obstacle = -1;
 };
 
-struct SharedExpCommandRecord{
+struct UserCommandRecord{
+    UserCommandRecord(){}
+    UserCommandRecord(std::chrono::milliseconds t_now, UserInputType type, int ID, qreal x, qreal y, qreal dx, qreal dy)
+        :t_now(t_now), robotID(ID), type(type),x(x),y(y),dx(dx),dy(dy){}
     std::chrono::milliseconds t_now;
-
+    UserInputType type;
+    qreal x, y, dx, dy;
+    int   robotID;
 };
 
 class CoreData
@@ -55,6 +60,7 @@ public:
             rec.clear();
         }
         rec_state.resize(robots.size());
+        rec_user.clear();
     }
 
     // 记录数据 检查有没有撞上障碍等
@@ -71,6 +77,7 @@ public:
 
     // 记录实验过程
     std::vector<std::vector<StateRecord>> rec_state;
+    std::vector<UserCommandRecord>        rec_user;
     std::chrono::steady_clock::time_point t_start;
     std::chrono::steady_clock::time_point t_end;
 

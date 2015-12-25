@@ -53,6 +53,7 @@ public slots:
     // Used by tunnel experiment
     void onNewTunnelTarget(int robotID, QPointF start, QPointF dx);
     void onRemoveAllTunnelTarget(int robotID);
+    void onUserSetFree(int robotID);
 
     // Used by direct blend experiment
     void onDirectBlend_NewCmd(int robotID, QPointF start, QPointF dx);
@@ -77,12 +78,14 @@ public:
 
 protected:
     void handle_sub(int ID, int type, void* data, size_t size);
+    void timerEvent(QTimerEvent *event);    // 异步发送UserInput的方式
 
 public:
     Agent       agent;
     atomic_bool isUpdating;
     CoreData*   data  = nullptr;
     int client_num = 1;
+    int myTimerID  = 0;
 };
 
 #endif // EXTERNALCONTROL_H

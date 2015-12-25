@@ -58,13 +58,32 @@ void onExperimentStart(MainWindow& w, MainScene&s, ControlPanel& c, ExternalCont
     s.isTraceMode = false;
     ext.isUpdating = true;
     ext.onStartExperiment();
-    s.setSceneMode(SceneMode::control_interface);
+
+    if (data.tunnel_continuous){
+        s.setSceneMode(SceneMode::control_forTunnel);
+    }
+    else{
+        s.setSceneMode(SceneMode::control_interface);
+    }
+
+
+    int checking_T = int(data.mpcSystemDt * 1000 * 2 / 3 + 0.5);
+    ext.myTimerID = ext.startTimer(checking_T);
+    if (ext.myTimerID != 0)
+        qDebug()<<QString("Experiment Started with checking cycle = %1 ms").arg(checking_T);
+    else{
+        qDebug()<<"Fail to set up timer";
+    }
+
     data.t_start = std::chrono::steady_clock::now();
 }
 
 
 void onExperimentStop(MainWindow& w, MainScene&s, ControlPanel& c, ExternalControl& ext, CoreData& data){
     data.t_end = std::chrono::steady_clock::now();
+    if (ext.myTimerID != 0)
+        ext.killTimer(ext.myTimerID);
+
     ext.onStopExperiment();
     ext.isUpdating = false;
     s.isTraceMode = true;
@@ -117,6 +136,22 @@ void connectPannel(ExternalControl& ext, MainScene& s, CoreData& data){
                      &ext, &ExternalControl::onSetNewTrace);
 }
 
+void connect_robots(int n, ExternalControl& ext, MainScene& s, CoreData& data, bool show_info = false){
+    std::vector<client_data> client_list;
+    for (int i=0;i<n;++i){
+        client_list.push_back(client_data{"127.0.0.1", i+1, 4455+2*i, 4456+2*i});
+        //data.add_robot(i+1, 0, 0, 90, show_info);
+    }
+    ext.agent.me = client_data{"127.0.0.1", 0, 5544, 5545};
+    ext.connect(client_list);
+
+    if (n >=1) data.add_robot(1, 0, 0, 90, show_info);
+    if (n >=2) data.add_robot(2, 0, 1, 90, show_info);
+    if (n >=3) data.add_robot(3, 1, 1, 90, show_info);
+    if (n >=4) data.add_robot(4, 1, 0, 90, show_info);
+    s.addRobot(data.robots);
+}
+
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
@@ -129,22 +164,31 @@ int main(int argc, char *argv[])
     s.data = &data;
     c.data = &data;
     ext.data = &data;
+
+    // 功能配置：是否向Client求取默认设置
+    data.useDefaultFromClient = true;
+    // 功能配置：是否每次用ReplaceLastTarget的方式
+    data.newTargetAsReplace   = true;
+    // 功能配置：画布是否可以放置轨线
+    s.isTraceMode = true;
+
     c.refreshBasicConfig(); // 根据data的数据更新界面
     initMainWindow(w, s);   // 设置画布大小等
 
-    s.isTraceMode = true;
+
     //ext.agent.me = client_data{"192.168.1.200", 0, 5544, 5545};
     //ext.connect({"192.168.1.224", 1, 4455, 4456});
 
-    ext.agent.me = client_data{"127.0.0.1", 0, 5544, 5545};
+    //ext.agent.me = client_data{"127.0.0.1", 0, 5544, 5545};
     //ext.connect({"127.0.0.1", 1, 4455, 4456});
 
     //ext.connect({ client_data{"127.0.0.1", 1, 4455, 4456},  client_data{"127.0.0.1", 2, 4457, 4458}});
+    /*
     ext.connect({ client_data{"127.0.0.1", 1, 4455, 4456},
                   client_data{"127.0.0.1", 2, 4457, 4458},
                   client_data{"127.0.0.1", 3, 4459, 4460},
                   client_data{"127.0.0.1", 4, 4461, 4462}});
-
+    */
     // Pannel之间的连接
     connectPannel(c, ext);
     connectPannel(c, s);
@@ -166,17 +210,17 @@ int main(int argc, char *argv[])
     QObject::connect(&c, &ControlPanel::stopExperiment,
                      [&](){  onExperimentStop(w, s, c, ext, data);  });
 
-    // 放机器人
-    data.useDefaultFromClient = true;
-    data.newTargetAsReplace   = true;
+    // 连接、放置机器人
     bool show_info = false;
+    connect_robots(4, ext, s, data, show_info);
 
+    /*
     data.add_robot(1, 0, 0, 90, show_info);
     data.add_robot(2, 0, 1, 90, show_info);
     data.add_robot(3, 1, 1, 90, show_info);
     data.add_robot(4, 1, 0, 90, show_info);
     s.addRobot(data.robots);
-
+    */
     /*
     data.robots.push_back(s.addRobot(1, 0, 0, 90, show_info));
     data.robots.push_back(s.addRobot(2, 0, 1, 90, show_info));
@@ -185,12 +229,17 @@ int main(int argc, char *argv[])
     */
     // 测试：放一些障碍物....
     /*
-    data.obstacles = { {0, 0, 1,  1, ObstacleShape::Circle},
-                       {2, 0, 1, 0.5, ObstacleShape::Square},
-                       {0, 2, 0.5, 1, ObstacleShape::Circle}
+    data.obstacles = { {2, 0, 1,  1, ObstacleShape::Circle},
+                        {0, 0, 1, 0.5, ObstacleShape::Square},
+                        {0, 2, 0.5, 1, ObstacleShape::Circle}
                       };
-    s.addObstacles(data.obstacles);
+    //
+    //s.addObstacles(data.obstacles);
+    //data.obstacles[0].pItem->highlight = true;
+    //data.obstacles[2].pItem->highlight = true;
+    //s.update();
     */
+
     w.show();
     c.show();
     return a.exec();

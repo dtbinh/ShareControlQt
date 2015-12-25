@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>192</width>
-    <height>439</height>
+    <height>434</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,7 +19,7 @@
      <x>0</x>
      <y>10</y>
      <width>191</width>
-     <height>201</height>
+     <height>221</height>
     </rect>
    </property>
    <property name="title">
@@ -31,8 +31,8 @@
    <widget class="QPushButton" name="btnResetConfig">
     <property name="geometry">
      <rect>
-      <x>105</x>
-      <y>170</y>
+      <x>100</x>
+      <y>190</y>
       <width>71</width>
       <height>21</height>
      </rect>
@@ -162,12 +162,25 @@
       <string>Tunnel实验</string>
      </property>
     </widget>
+    <widget class="QGroupBox" name="gpTunnel">
+     <property name="geometry">
+      <rect>
+       <x>5</x>
+       <y>90</y>
+       <width>91</width>
+       <height>41</height>
+      </rect>
+     </property>
+     <property name="title">
+      <string/>
+     </property>
+    </widget>
    </widget>
    <widget class="QPushButton" name="btnSetConfig">
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>170</y>
+      <y>190</y>
       <width>71</width>
       <height>21</height>
      </rect>
@@ -281,6 +294,32 @@
       <bool>true</bool>
      </property>
     </widget>
+   </widget>
+   <widget class="QCheckBox" name="cbContinuous">
+    <property name="geometry">
+     <rect>
+      <x>100</x>
+      <y>150</y>
+      <width>71</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>连续控制</string>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="cbWithTTT">
+    <property name="geometry">
+     <rect>
+      <x>100</x>
+      <y>170</y>
+      <width>81</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>用TTT预测</string>
+    </property>
    </widget>
   </widget>
   <widget class="QGroupBox" name="gpOnTheRun">

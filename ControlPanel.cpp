@@ -95,6 +95,15 @@ ControlPanel::ControlPanel(QWidget *parent) :
         emit this->resetCurrentConfig();
     });
 
+    // CHECK BOX
+    // Tunnel实验的选项
+    connect(ui->cbContinuous, &QCheckBox::clicked, [=](bool checked){
+       if (data){data->tunnel_continuous = checked;}
+    });
+    connect(ui->cbWithTTT,    &QCheckBox::clicked, [=](bool checked){
+        if (data){data->tunnel_useTTT    = checked;}
+    });
+
     // 开始/结束实验按钮
     connect(ui->btnStartStop, &QPushButton::clicked, [&](){
         if (data){
@@ -117,9 +126,6 @@ ControlPanel::ControlPanel(QWidget *parent) :
         emit programExit();
         this->close();
     });
-
-    // 根据设置更新界面中各按钮的情况
-    // refreshBasicConfig(); // 这没有用 因为最开始的时候data是nullptr
 }
 
 ControlPanel::~ControlPanel()
@@ -203,6 +209,9 @@ void ControlPanel::refreshBasicConfig(){
         ui->rtnIdeal->setChecked(op);
         op = data->robot_type == RobotType::direct;
         ui->rtnSimu->setChecked(op);
+
+        ui->cbContinuous->setChecked(data->tunnel_continuous);
+        ui->cbWithTTT->setChecked(data->tunnel_useTTT);
 
         float winSize = data->mpcWindowsTime;
         int pos = int((winSize - minWinSize) / (maxWinSize - minWinSize) * 100 + 0.5);

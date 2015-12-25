@@ -10,14 +10,11 @@ QString getModeString(SceneMode mode){
         return GET_STR(control_interface);
     if (mode == SceneMode::placing_robots)
         return GET_STR(placing_robots);
+    if (mode == SceneMode::control_forTunnel)
+        return GET_STR(control_forTunnel);
     return "";
 }
 
-/*
- * RobotItem
- */
-RobotItem::RobotItem(int _ID, pGraphicsRobotItem &&_robot, pGraphicsRobotInfoItem &&_info)
-    : ID(_ID),robot(_robot), info(_info){}
 
 
 /*
@@ -28,6 +25,9 @@ MainScene::MainScene(QObject *parent) :
 {
     myCoordination = new CoordinateSystem(100);
     myCoordination->setAxisHedaing(AxisHeading::right, AxisHeading::up);
+    myInvert = myCoordination->inverted();
+    qreal ratio = 1.0 / myCoordination->UnitSize();
+    myInvert.scale(ratio, ratio);
 }
 
 MainScene::~MainScene(){
@@ -115,6 +115,7 @@ void MainScene::onSetupTunnel(double R, double r){
     // 画障碍物
     if (data->obstacles.empty())
         data->generateObstacles();
+    qDebug()<<"Good";
     addObstacles(data->obstacles);
 
     // 画轨道
@@ -164,7 +165,6 @@ void MainScene::setSceneMode(SceneMode modeNew){
         if (modeNew == SceneMode::control_interface){
             for (auto& it : data->robots){
                 it.robot->setFlag(QGraphicsItem::ItemIsMovable, false);
-                // it.robot->setSelected(false);
                 it.robot->setHighlight(false);
             }
             mousePressed = false;
@@ -176,11 +176,19 @@ void MainScene::setSceneMode(SceneMode modeNew){
 
             if (robotSelected != nullptr){
                 robotSelected->robot->setHighlight(false);
-                // robotSelected->robot->setSelected(false);
             }
 
             for (auto& it : data->robots)
                 it.robot->setFlag(QGraphicsItem::ItemIsMovable, true);
+        }
+        if (modeNew == SceneMode::control_forTunnel){
+            // 跟control_interface做同样的事情
+            for (auto& it : data->robots){
+                it.robot->setFlag(QGraphicsItem::ItemIsMovable, false);
+                it.robot->setHighlight(false);
+            }
+            mousePressed = false;
+            robotSelected = nullptr;
         }
         mode = modeNew;
 
@@ -214,12 +222,44 @@ void MainScene::mousePressEvent(QGraphicsSceneMouseEvent *mouseEvent){
         }
         mouseEvent->accept();
     }
+
+    // 此时跟 control_interface 一样
+    else if (mode == SceneMode::control_forTunnel){
+        if (mouseEvent->button() == Qt::LeftButton){
+            // 找到被选中的Robot
+            if (robotSelected != nullptr){
+                robotSelected->robot->setHighlight(false);
+            }
+            robotSelected = getNearestRobot(mouseEvent->scenePos());
+
+            if (robotSelected != nullptr){
+                // 如果能找到才合法
+                mousePressed = true;
+                robotSelected->robot->setHighlight(true);
+
+                // 设置User箭头
+                userArrow.setEndpoint(0, 0);
+                if (!userArrow.scene())
+                    this->addItem(&userArrow);
+                userArrow.setPos(mouseEvent->scenePos());
+            }
+        }
+        mouseEvent->accept();
+    }
     return QGraphicsScene::mousePressEvent(mouseEvent);
 }
 
 void MainScene::mouseMoveEvent(QGraphicsSceneMouseEvent *mouseEvent){
     if (mode == SceneMode::control_interface && mousePressed){
         userArrow.setEndpoint(mouseEvent->scenePos() - userArrow.pos());
+        mouseEvent->accept();
+    }
+    else if (mode == SceneMode::control_forTunnel && mousePressed){
+        userArrow.setEndpoint(mouseEvent->scenePos() - userArrow.pos());
+        if (robotSelected){
+            robotSelected->set_userInputSlide(myInvert.map(userArrow.scenePos()),
+                                                myInvert.map(userArrow.Endpoint()));
+        }
         mouseEvent->accept();
     }
     else QGraphicsScene::mouseMoveEvent(mouseEvent);
@@ -250,7 +290,6 @@ void MainWindow::wheelEvent(QWheelEvent * event){
 /*
  * 产生两个userEvent的地方
  */
-
 void MainScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *mouseEvent){
     if (mode == SceneMode::control_interface){
         if (mouseEvent->button() == Qt::LeftButton){
@@ -259,10 +298,11 @@ void MainScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *mouseEvent){
                 qDebug() << "double clicked";
 
                 if (robotSelected != nullptr){
-                    emit this->newUserDoubleClick(robotSelected->ID);
-                    // robotSelected->robot->setSelected(false);
+                    //emit this->newUserDoubleClick(robotSelected->ID);
+                    robotSelected->set_userInput(UserInputType::doubleClick);
+
                     robotSelected->robot->setHighlight(false);
-                    robotSelected = false;
+                    robotSelected = nullptr;
                 }
             }
             else{
@@ -272,12 +312,20 @@ void MainScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *mouseEvent){
         // 右键的时候才确定发送
         if (mouseEvent->button() == Qt::RightButton){
             if (userArrow.scene()){
-                auto invert = myCoordination->inverted();
-                this->removeItem(&userArrow);
 
-                emit this->newUserSlideMotion(robotSelected->ID,
-                                              invert.map(userArrow.scenePos()) / myCoordination->UnitSize(),
-                                              invert.map(userArrow.Endpoint()) / myCoordination->UnitSize());
+                this->removeItem(&userArrow);
+                robotSelected->set_userInputSlide( myInvert.map(userArrow.scenePos()),
+                                                     myInvert.map(userArrow.Endpoint()) );
+
+
+                // Test myInvert
+                /*
+                auto invert = myCoordination->inverted();
+                QPointF _a1 = invert.map(userArrow.scenePos()) / myCoordination->UnitSize();
+                QPointF _a2 = myInvert.map(userArrow.scenePos());
+                QPointF _ea = _a2 - _a1;
+                qDebug() << "Error is "<< _ea;
+                */
 
                 if (this->isTraceMode){
                     if (traceLine != nullptr)  this->removeItem(traceLine);
@@ -291,16 +339,39 @@ void MainScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *mouseEvent){
                 }
                 else
                     qDebug()<<"NOT trace mode";
-                //qDebug()<<"Emitted "<<(invert.map(userArrow.scenePos()) / myCoordination->UnitSize())
-                //                    <<(invert.map(userArrow.Endpoint())/ myCoordination->UnitSize());
             }
             if (robotSelected != nullptr){
-                // robotSelected->robot->setSelected(false);
                 robotSelected->robot->setHighlight(false);
                 robotSelected = nullptr;
             }
         }
         mouseEvent->accept();
+    }
+    else if (mode == SceneMode::control_forTunnel){
+         if (mouseEvent->button() == Qt::LeftButton){
+             if (doubleClicked){
+                 // 双击的时候跟control_interface一样
+                 doubleClicked = false;
+                 qDebug() << "double clicked";
+
+                 if (robotSelected != nullptr){
+                     robotSelected->set_userInput(UserInputType::doubleClick);
+                     robotSelected->setHighlight(false);
+                     robotSelected = nullptr;
+                 }
+             }
+             else if (robotSelected != nullptr){
+                 // 单击而放下的时候
+                 qDebug() << QString("Releasing Control for Robot %1").arg(robotSelected->ID);
+                 robotSelected->set_userInput(UserInputType::setFree);
+                 robotSelected->setHighlight(false);
+                 robotSelected = nullptr;
+                 mousePressed = false;
+                 if (userArrow.scene()){
+                     this->removeItem(&userArrow);
+                 }
+             }
+         }
     }
     else QGraphicsScene::mouseReleaseEvent(mouseEvent);
 }

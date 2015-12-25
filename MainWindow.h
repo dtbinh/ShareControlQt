@@ -13,6 +13,7 @@
 
 enum class SceneMode{
     control_interface,  // 发送User箭头，自动确定离哪个robot最近 不能移动
+    control_forTunnel,  // 给Tunnel实验的控制模式
     placing_robots      // 可以移动机器人, 但并不发送User箭头
 };
 
@@ -65,17 +66,20 @@ public slots:
 public:
     // 画障碍物
     void addObstacles(std::vector<ObstacleItem>& obstacles){
-        for(auto& ob: obstacles)
-            addObstacles(ob);
+        for (size_t i=0;i<obstacles.size();++i){
+            addObstacles(obstacles[i]);
+            obstacles[i].pItem->ID = i + 1;
+            //obstacles[i].pItem->setCacheMode(QGraphicsItem::DeviceCoordinateCache);
+        }
     }
     void addObstacles(ObstacleItem& obstacle){
-        this->addItem(obstacle.make_item(myCoordination).get());
+        this->addItem(obstacle.make_item(myCoordination));
     }
 
     void addRobot(RobotItem& robot){
         robot.setCoordination(myCoordination);  // 用新坐标系
         this->addItem(robot.robot.get());
-        this->addItem(robot.info.get());
+       // this->addItem(robot.info.get());
     }
     void addRobot(std::vector<RobotItem>& robots){
         for (auto& rbt : robots){
@@ -95,6 +99,7 @@ public:
 
     SceneMode mode = SceneMode::placing_robots;
     CoordinateSystem* myCoordination = nullptr;
+    QTransform myInvert;
 
     CoreData* data = nullptr;
 };

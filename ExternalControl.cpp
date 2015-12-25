@@ -1,4 +1,5 @@
 #include "ExternalControl.h"
+#include "RobotItem.h"
 #include <QDebug>
 
 ExternalControl::ExternalControl(QObject *parent) : QObject(parent)
@@ -33,20 +34,15 @@ void ExternalControl::connect(const std::vector<client_data>& client_list, const
     qDebug()<<QString("Everything started");
 }
 
-
 void ExternalControl::handle_sub(int ID, int type, void* _data, size_t size){
 
     myBroadcast::Basic _type = myBroadcast::Basic(type);
     if (_type == myBroadcast::Basic::state){
         if (size == sizeof(RobotStateData) && this->isUpdating){
             RobotStateData* pstate = (RobotStateData*)_data;
-            if (data)
+            if (data){
                 data->onNewRobotPositions(ID, *pstate);
-
-            // To be tested here
-            // data->rec_state[index].push_back(*pstate);
-            // MSVC2013's duration cast may be faulty
-            // data->rec_state[index].back().t_now = duration_cast<milliseconds>(tnow - data->t_start);
+            }
             emit this->newPosition(ID, pstate->x, pstate->y, pstate->heading, pstate->velocity);
 
             //qDebug()<<QString("new state %1, (%2, %3) - %4, %5").arg(ID)
@@ -120,20 +116,10 @@ void ExternalControl::onResetCurrentConfig(){
 
 
 void ExternalControl::onStartExperiment(){    
-    //int robotID = 1;
-    //int rep = agent.request(robotID, (int)myEvent::Basic::startExperiment);
-    //if (rep != (int)myReply::good){
-    //    qDebug()<<"can not start experiment...";
-    //}
     agent.broadcast(int(myEvent::Basic::startExperiment));
 }
 
 void ExternalControl::onStopExperiment(){
-   // int robotID = 1;
-   // int rep = agent.request(robotID, (int)myEvent::Basic::stopExperiment);
-   // if (rep != (int)myReply::good){
-   //     qDebug()<<"can not stop experiment...";
-   // }
    agent.broadcast(int(myEvent::Basic::stopExperiment));
 }
 
@@ -224,6 +210,49 @@ void ExternalControl::onRemoveLastTarget(int robotID){
 /*
  * Tunnel Experiment
 */
+void ExternalControl::timerEvent(QTimerEvent *event){
+    using std::chrono::milliseconds;
+    using std::chrono::steady_clock;
+    using std::chrono::duration_cast;
+    auto current_time = steady_clock::now();
+
+    UserInputType type;
+    QPointF start, dx;
+    if (data){
+        for (auto& robot : data->robots){
+            robot.get_userInput(type, start, dx);
+            robot.set_userInput(UserInputType::none);
+            if (type == UserInputType::newSlide){
+                this->onNewTunnelTarget(robot.ID, start, dx);
+            }
+            else if (type == UserInputType::doubleClick){
+                this->onRemoveAllTunnelTarget(robot.ID);
+            }
+            else if (type == UserInputType::setFree){
+                this->onUserSetFree(robot.ID);
+            }
+
+            if (type != UserInputType::none){
+                data->rec_user.push_back({ duration_cast<milliseconds>(current_time - data->t_start),
+                                             type, robot.ID,
+                                             start.x(), start.y(), dx.x(), dx.y()});
+            }
+        }
+    }
+}
+
+void ExternalControl::onUserSetFree(int robotID){
+    if (data && data->experimentID == ExpUsing::expTunnel){
+        int rep = agent.request(robotID, int(myEvent::Tunnel::setFree), nullptr, 0);
+        if (rep != (int)myReply::good){
+            qDebug()<<QString("Failed to setFree");
+        }
+        else{
+            qDebug()<<QString("setFree sended to Robot %1").arg(robotID);
+        }
+    }
+}
+
 void ExternalControl::onNewTunnelTarget(int robotID, QPointF start, QPointF dx){
     if (data){
         if (data->experimentID == ExpUsing::expTunnel){
@@ -257,9 +286,11 @@ void ExternalControl::onNewTunnelTarget(int robotID, QPointF start, QPointF dx){
                 qDebug()<<QString("Failed to add new user target");
             }
             else{
+                /*
                 qDebug()<<QString("Robot %1, request added").arg(robotID);
                 qDebug()<<"\t"<<QString("(%1, %2) - %3").arg(user_target.x).arg(user_target.y).arg(user_target.heading);
                 qDebug()<<"\t"<<QString("K = %1, decay = %2").arg(user_target.K).arg(user_target.secondsToDieOut);
+                */
             }
         }
     }
