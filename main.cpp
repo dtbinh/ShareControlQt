@@ -17,11 +17,13 @@ using zmq::context_t;
 using zmq::message_t;
 
 void initMainWindow(MainWindow& w, MainScene& s){
-    QRectF rct(0,0, 1600, 1600);
-    rct.moveCenter(QPointF(0, -400));
+//    QRectF rct(0,0, 1600, 1600);
+//    rct.moveCenter(QPointF(0, -400));
+    QRectF rct(-400, -400, 800, 800);
 
     w.setScene(&s);
     w.setSceneRect(rct);
+    w.setFixedSize(850, 850);
 }
 
 void onExperimentStart(MainWindow& w, MainScene&s, ControlPanel& c, ExternalControl& ext, CoreData& data){
@@ -175,20 +177,6 @@ int main(int argc, char *argv[])
     c.refreshBasicConfig(); // 根据data的数据更新界面
     initMainWindow(w, s);   // 设置画布大小等
 
-
-    //ext.agent.me = client_data{"192.168.1.200", 0, 5544, 5545};
-    //ext.connect({"192.168.1.224", 1, 4455, 4456});
-
-    //ext.agent.me = client_data{"127.0.0.1", 0, 5544, 5545};
-    //ext.connect({"127.0.0.1", 1, 4455, 4456});
-
-    //ext.connect({ client_data{"127.0.0.1", 1, 4455, 4456},  client_data{"127.0.0.1", 2, 4457, 4458}});
-    /*
-    ext.connect({ client_data{"127.0.0.1", 1, 4455, 4456},
-                  client_data{"127.0.0.1", 2, 4457, 4458},
-                  client_data{"127.0.0.1", 3, 4459, 4460},
-                  client_data{"127.0.0.1", 4, 4461, 4462}});
-    */
     // Pannel之间的连接
     connectPannel(c, ext);
     connectPannel(c, s);

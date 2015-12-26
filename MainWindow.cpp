@@ -23,7 +23,7 @@ QString getModeString(SceneMode mode){
 MainScene::MainScene(QObject *parent) :
     QGraphicsScene(parent)
 {
-    myCoordination = new CoordinateSystem(100);
+    myCoordination = new CoordinateSystem(150);
     myCoordination->setAxisHedaing(AxisHeading::right, AxisHeading::up);
     myInvert = myCoordination->inverted();
     qreal ratio = 1.0 / myCoordination->UnitSize();

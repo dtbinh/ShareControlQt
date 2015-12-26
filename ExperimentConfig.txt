@@ -1,0 +1,19 @@
+# Experiment Setting
+experiment-1:
+	robot_num = 4
+	time  = 90 		# seconds
+	win_size = 6	# seconds
+	Kusr  = 10		
+	decay = 6		# seconds
+	
+experiment-2:
+	robot_num = 4
+	time  = 90 		# seconds
+	win_size = 6	# seconds
+	Kusr  = 10		
+	decay = 10		# seconds
+	
+# Environment Setting
+tunnel_R = 2	# meter
+tunnel_r = 0.3	# meter
+

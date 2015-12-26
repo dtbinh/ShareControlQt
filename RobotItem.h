@@ -49,7 +49,7 @@ public slots:
 protected:
     bool  highlight = false;
     qreal heading = 90; // 按实际朝向度量，x轴始，逆时针为正
-    qreal radius = 0.3; // 按实际长度度量
+    qreal radius = 0.25; // 按实际长度度量
 
     CoordinateSystem* coordination = nullptr;
     static CoordinateSystem defaultCoordination;
@@ -59,7 +59,7 @@ using pGraphicsRobotItem = std::shared_ptr<GraphicsRobotItem>;
 
 
 enum class UserInputType{
-    none,
+    none = 0,
     newSlide, doubleClick,
     setFree                 // 当User停止连续控制时（MouseUp）发送此
 };

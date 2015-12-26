@@ -34,15 +34,18 @@ void CoreData::generateObstacles(){
         obstacles.clear();
         double R = tunnel_R;
         double r = tunnel_r;
-        double dr = 0.2;
+        double r2 = r * 1.4;
+        double dr = 0;
 
-        obstacles = { {-(R+r/2-dr), 0, r/2,  r/2, ObstacleShape::Circle},
-                       {-R/2, (R+r/2-dr), r/2, r/2, ObstacleShape::Circle},
-                       {R/2, (R+r/2-dr), r/2, r/2, ObstacleShape::Circle},
-                       {R, 0, r/4, r/4, ObstacleShape::Circle},
+        //ObstacleShape shape = ObstacleShape::Circle;
+        ObstacleShape shape = ObstacleShape::Square;
+        obstacles = { {-(R+r/2-dr), 0, r2/2,  r2/2, shape},
+                       {-R/2, (R+r/2-dr), r2/2, r2/2, shape},
+                       {R/2, (R+r/2-dr), r2/2, r2/2, shape},
+                       {R, 0, r2/4, r2/4, shape},
                        //{R,  0, r/4, R, ObstacleShape::Square},
-                       {R/2, -(R+r/2-dr), r/2, r/2, ObstacleShape::Circle},
-                       {-R/2, -(R-r/2+dr), r/2, r/2, ObstacleShape::Circle},
+                       {R/2, -(R+r/2-dr), r2/2, r2/2, shape},
+                       {-R/2, -(R-r/2+dr), r2/2, r2/2, shape},
                       };
     }
 }
@@ -218,7 +221,7 @@ void CoreData::analyzeData(){
             for (auto& t : time_bad)
                 total_inside += t.count();
             total_inside /= time_bad.size();
-            qDebug()<<QString("Average : time inside obstacle = %1 ms / %2 ms (%3 %%)")
+            qDebug()<<QString("Average : time inside obstacle = %1 ms / %2 ms (%3 %)")
                       .arg(int(total_inside+0.5))
                       .arg(time_all.count())
                       .arg(int(total_inside / time_all.count() * 100 + 0.5));

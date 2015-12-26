@@ -123,7 +123,7 @@ ControlPanel::ControlPanel(QWidget *parent) :
     });
     connect(ui->btnExitAll, &QPushButton::clicked, [&](){
         emit closeClients();
-        emit programExit();
+        //emit programExit();
         this->close();
     });
 }
