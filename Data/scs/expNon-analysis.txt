@@ -1,0 +1,8 @@
+"total records : 639"
+"total time    : 100014 ms"
+"total user_input record : 540"
+"For Robot 1, time inside obstacle = 13753 ms / 100014 ms"
+"For Robot 2, time inside obstacle = 19236 ms / 100014 ms"
+"For Robot 3, time inside obstacle = 14376 ms / 100014 ms"
+"For Robot 4, time inside obstacle = 15176 ms / 100014 ms"
+"Average : time inside obstacle = 15635 ms / 100014 ms (16 %)"

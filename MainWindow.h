@@ -61,6 +61,10 @@ public slots:
             this->removeItem(item);
     }
 
+    void onPrepareStart(){
+        data->reset_robot_positions();
+    }
+
 public:
     // 画障碍物
     void addObstacles(std::vector<ObstacleItem>& obstacles){

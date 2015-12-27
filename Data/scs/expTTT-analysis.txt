@@ -1,0 +1,9 @@
+Experiment stopped
+"total records : 639"
+"total time    : 100013 ms"
+"total user_input record : 246"
+"For Robot 1, time inside obstacle = 4850 ms / 100013 ms"
+"For Robot 2, time inside obstacle = 5002 ms / 100013 ms"
+"For Robot 3, time inside obstacle = 2188 ms / 100013 ms"
+"For Robot 4, time inside obstacle = 7678 ms / 100013 ms"
+"Average : time inside obstacle = 4930 ms / 100013 ms (5 %)"

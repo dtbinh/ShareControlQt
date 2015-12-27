@@ -14,10 +14,10 @@ class ExpA : public QThread
 {
     Q_OBJECT
     void run();
-    void timerEvent(QTimerEvent *);
 public slots:
     void prepare_stop();
 signals:
+    void prepare_start();
     void start_experiment();
     void stop_experiment();
     void new_autoStop(int ms);
@@ -32,10 +32,8 @@ public:
     CoreData *data;
     _cfg::section *config;
 
-    bool use_TTT;
+    bool use_TTT;       // TTT : Temporary Tracking Task
     bool isExercise;
-    std::atomic<int> exp_running;
-    int myTimer;
 };
 
 #endif // EXPA_H

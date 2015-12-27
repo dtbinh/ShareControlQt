@@ -23,8 +23,8 @@ public:
     QPainterPath shape() const;
 
 public:
-    bool   highlight = false;
-    int ID;
+    bool highlight = false;
+    int  ID;
 protected:
     qreal x,  y;
     qreal rX, rY;
@@ -37,7 +37,11 @@ class ObstacleItem
 public:
     ObstacleItem(){}
     ObstacleItem(double x, double y, double rx, double ry, ObstacleShape shape)
-        :x(x),y(y),rX(rx),rY(ry),shape(shape){}
+        :x(x),y(y),rX(rx),rY(ry),shape(shape)
+    {
+        qDebug()<<QString("new obstacle at (%1, %2) - %3").arg(x).arg(y).arg(rx);
+
+    }
 
     QGraphicsItem* make_item(CoordinateSystem* xyz = nullptr);
     std::shared_ptr<GraphicsObstacleItem> pItem = nullptr;

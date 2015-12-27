@@ -28,6 +28,31 @@ void CoreData::add_robot(int ID, qreal x, qreal y, qreal heading, bool show_info
                       std::move(pGraphicsRobotInfoItem(info))});
 }
 
+void CoreData::reset_robot_positions(){
+    qreal R = tunnel_R;
+    size_t i;
+    i=0;
+    if (robots.size() > i) {
+        robots[i].setRealPos(-R, -R);
+        robots[i].setHeading(90);
+    }
+    i=1;
+    if (robots.size() > i) {
+        robots[i].setRealPos(-R, R);
+        robots[i].setHeading(0);
+    }
+    i=2;
+    if (robots.size() > i) {
+        robots[i].setRealPos(R, R);
+        robots[i].setHeading(-90);  // 似乎-90会有bug?
+    }
+    i=3;
+    if (robots.size() > i) {
+        robots[i].setRealPos(R, -R);
+        robots[i].setHeading(180);
+    }
+}
+
 void CoreData::generateObstacles(){
     // 产生针对于Tunnel实验的障碍物
     if (experimentID == ExpUsing::expTunnel){
@@ -39,13 +64,13 @@ void CoreData::generateObstacles(){
 
         ObstacleShape shape = ObstacleShape::Circle;
         //ObstacleShape shape = ObstacleShape::Square;
-        obstacles = { {-(R+r/2-dr), 0, r2/2,  r2/2, shape},
-                       {-R/2, (R+r/2-dr), r2/2, r2/2, shape},
-                       {R/2, (R+r/2-dr), r2/2, r2/2, shape},
-                       {R, 0, r2/4, r2/4, shape},
+        obstacles = { {-(R+r-dr), 0, r2,  r2, shape},
+                       {-R/2, (R+r-dr), r2, r2, shape},
+                       {R/2, (R+r-dr), r2, r2, shape},
+                       {R, 0, r2/2, r2/2, shape},
                        //{R,  0, r/4, R, ObstacleShape::Square},
-                       {R/2, -(R+r/2-dr), r2/2, r2/2, shape},
-                       {-R/2, -(R-r/2+dr), r2/2, r2/2, shape},
+                       {R/2, -(R+r-dr), r2, r2, shape},
+                       {-R/2, -(R-r+dr), r2, r2, shape},
                       };
     }
 }
@@ -88,13 +113,13 @@ void CoreData::onNewRobotPositions(int ID, const RobotStateData& state){
     }
 }
 
-void CoreData::saveExperimentData(){
+void CoreData::saveExperimentData(QString prefix){
     if (!rec_state.empty() && !rec_state.front().empty()){
         qDebug()<<QString("total records : %1").arg(rec_state[0].size());
         qDebug()<<QString("total time    : %1 ms").arg(std::chrono::duration_cast<std::chrono::milliseconds>(t_end - t_start).count());
 
         for (size_t robot_index = 0; robot_index < rec_state.size(); ++robot_index){
-            QString fname = QString("expData-%1.txt").arg(robot_index);
+            QString fname = QString("%1-state-%2.txt").arg(prefix).arg(robot_index);
             QFile file(fname);
             if (!file.open(QIODevice::WriteOnly)){
                 qDebug()<<"Failed to open file";
@@ -117,9 +142,12 @@ void CoreData::saveExperimentData(){
             file.close();
         }
     }
+    else{
+        qDebug()<<"No state data has been recorded";
+    }
     if (!rec_user.empty()){
         qDebug()<<QString("total user_input record : %1").arg(rec_user.size());
-        QString fname = QString("expDataUser.txt");
+        QString fname = QString("%1-user.txt").arg(prefix);
         QFile file(fname);
         if (!file.open(QIODevice::WriteOnly)){
             qDebug()<<"Failed to open file";
@@ -139,6 +167,8 @@ void CoreData::saveExperimentData(){
         }
         out.flush();
         file.close();
+    }else{
+        qDebug()<<"No user input has been recorded";
     }
 }
 

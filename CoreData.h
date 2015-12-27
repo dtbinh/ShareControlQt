@@ -86,6 +86,9 @@ public:
     // 添加机器人
     void add_robot(int ID, qreal x = 0, qreal y = 0, qreal heading = 90, bool show_info = true);
 
+    // 重置机器人的位置
+    void reset_robot_positions();
+
     // 重置记录
     void resetRecords(){
         for (auto& rec : rec_state){
@@ -98,7 +101,7 @@ public:
     // 记录数据 检查有没有撞上障碍等
     void onNewRobotPositions(int ID, const RobotStateData& state);
     // 保存数据
-    void saveExperimentData();
+    void saveExperimentData(QString prefix = "");
     // 分析数据
     void analyzeData();
 

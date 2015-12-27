@@ -8,13 +8,16 @@ using std::chrono::duration_cast;
 
 
 void ExpA::run(){
+    // 实验设置
     data->tunnel_useTTT = use_TTT;
 
     // 准备开始
     ext->onSetCurrentConfig();
     data->resetRecords();
 
+    // 画图
     qDebug()<<"1.5 seconds to start";
+    emit prepare_start();
     if (this->isExercise)
         data->show_obstacles(1);
     else
@@ -25,7 +28,6 @@ void ExpA::run(){
     emit start_experiment();
     s->setSceneMode(SceneMode::control_forTunnel);
     data->t_start = std::chrono::steady_clock::now();
-    this->exp_running = true;
     qDebug()<<"Experiment Started";
 
     // 实验中
@@ -37,14 +39,7 @@ void ExpA::run(){
     }
 }
 
-void ExpA::timerEvent(QTimerEvent *event){
-    // 准备结束
-    prepare_stop();
-}
-
 void ExpA::prepare_stop(){
-    this->quit();
-
     data->t_end = steady_clock::now();
     s->setSceneMode(SceneMode::placing_robots);
     emit stop_experiment();
@@ -52,7 +47,12 @@ void ExpA::prepare_stop(){
 
     // 事后：分析、存储数据
     if (!this->isExercise){
-        data->saveExperimentData();
+        if (use_TTT){
+            data->saveExperimentData("expTTT");
+        }
+        else{
+            data->saveExperimentData("expNon");
+        }
         data->analyzeData();
     }
 

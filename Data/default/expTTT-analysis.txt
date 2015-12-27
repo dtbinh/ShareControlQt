@@ -1,0 +1,9 @@
+Experiment stopped
+total records : 639
+total time    : 99994 ms
+No user input has been recorded
+For Robot 1, time inside obstacle = 29223 ms / 99994 ms
+For Robot 2, time inside obstacle = 30501 ms / 99994 ms
+For Robot 3, time inside obstacle = 28909 ms / 99994 ms
+For Robot 4, time inside obstacle = 31126 ms / 99994 ms
+Average : time inside obstacle = 29940 ms / 99994 ms (30 %)
