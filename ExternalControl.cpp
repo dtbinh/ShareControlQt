@@ -58,7 +58,7 @@ void ExternalControl::handle_sub(int ID, int type, void* _data, size_t size){
 /*
  * 处理来自MainScene的NewTrace
 */
-
+/*
 void ExternalControl::onSetNewTrace(int robotID, QPointF start, QPointF dx){
     if (data){
         double th = atan2(dx.y(), dx.x());
@@ -71,7 +71,7 @@ void ExternalControl::onSetNewTrace(int robotID, QPointF start, QPointF dx){
         data->traceDefinition.heading = angle;
     }
 }
-
+*/
 /*
  * 向Client发送全局命令
 */
@@ -88,7 +88,7 @@ void ExternalControl::onSetCurrentConfig(){
         //qDebug()<<"reply is "<<rep;
     }
 }
-
+/*
 void ExternalControl::onResetCurrentConfig(){
     int robotID = 1;
     if (data){
@@ -113,19 +113,31 @@ void ExternalControl::onResetCurrentConfig(){
         }
     }
 }
-
-
+*/
 void ExternalControl::onStartExperiment(){    
     agent.broadcast(int(myEvent::Basic::startExperiment));
+    this->isUpdating = true;
+
+    int checking_T = int(data->mpcSystemDt * 1000 * 2 / 3 + 0.5);
+
+    myTimerID = startTimer(checking_T);
+    if (myTimerID != 0)
+        qDebug()<<QString("Experiment Started with checking cycle = %1 ms").arg(checking_T);
+    else{
+        qDebug()<<"Fail to set up timer";
+    }
 }
 
 void ExternalControl::onStopExperiment(){
+   this->isUpdating = false;
+   this->killTimer(myTimerID);
    agent.broadcast(int(myEvent::Basic::stopExperiment));
 }
 
 /*
  * Swithced Experiment
 */
+/*
 void ExternalControl::onToAutonomous(int robotID){
     if (data){
         if (data->experimentID == ExpUsing::expSwitch){
@@ -157,10 +169,11 @@ void ExternalControl::onToTeleoperation(int robotID, QPointF start, QPointF dx){
         }
     }
 }
-
+*/
 /*
  * Shared Experiment
 */
+/*
 void ExternalControl::onNewUserTarget(int robotID, QPointF start, QPointF dx){
     if (data){
         if (data->experimentID == ExpUsing::expShared){
@@ -206,7 +219,7 @@ void ExternalControl::onRemoveLastTarget(int robotID){
         }
     }
 }
-
+*/
 /*
  * Tunnel Experiment
 */
@@ -311,7 +324,7 @@ void ExternalControl::onRemoveAllTunnelTarget(int robotID){
 /*
  * Direct Linear Blend Experiment
 */
-
+/*
 void ExternalControl::onDirectBlend_NewCmd(int robotID, QPointF start, QPointF dx){
     if (data){
         double th = atan2(dx.y(), dx.x());
@@ -394,3 +407,4 @@ void ExternalControl::onDirectBlend_RemoveAll(int robotID){
         }
     }
 }
+*/

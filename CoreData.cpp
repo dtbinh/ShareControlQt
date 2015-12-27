@@ -34,11 +34,11 @@ void CoreData::generateObstacles(){
         obstacles.clear();
         double R = tunnel_R;
         double r = tunnel_r;
-        double r2 = r * 1.4;
+        double r2 = r * 1.2;
         double dr = 0;
 
-        //ObstacleShape shape = ObstacleShape::Circle;
-        ObstacleShape shape = ObstacleShape::Square;
+        ObstacleShape shape = ObstacleShape::Circle;
+        //ObstacleShape shape = ObstacleShape::Square;
         obstacles = { {-(R+r/2-dr), 0, r2/2,  r2/2, shape},
                        {-R/2, (R+r/2-dr), r2/2, r2/2, shape},
                        {R/2, (R+r/2-dr), r2/2, r2/2, shape},
@@ -72,6 +72,8 @@ void CoreData::onNewRobotPositions(int ID, const RobotStateData& state){
     rec_state[index].back().inside_obstacle = -1;
 
     for (size_t i =0;i < obstacles.size();++i){
+        if (!obstacles[i].pItem->isVisible())
+            continue;
         if (obstacles[i].contains(state.x, state.y)){
             rec_state[index].back().inside_obstacle = i;
             obstacles[i].pItem->highlight = true;
@@ -143,13 +145,10 @@ void CoreData::saveExperimentData(){
 void CoreData::analyzeData(){
     using std::chrono::milliseconds;
     using std::chrono::duration_cast;
-    qDebug()<<"Inside";
     try{
         if (!rec_state.empty()){
             milliseconds              time_all;    // 实验总时间
-            //std::vector<milliseconds> time_good;   // 该Robot没有撞到障碍物的时间
             std::vector<milliseconds> time_bad;    // 该Robot撞到障碍物的时间(用来做Double Check)
-            //time_good.resize(rec_state.size());
             time_bad.resize(rec_state.size());
 
             time_all = duration_cast<milliseconds>(t_end - t_start);
@@ -157,31 +156,6 @@ void CoreData::analyzeData(){
             // 计算每个Robot有多长时间在障碍里面
             for (size_t robot_index = 0;robot_index < rec_state.size(); ++robot_index){
                 std::vector<StateRecord>& rec = rec_state[robot_index];
-
-                /*
-                milliseconds first_good = milliseconds::zero() ; // 当前一连续good中的第一时刻
-                bool former_good = true;     // 前一时刻是不是好的
-                time_good[robot_index] = milliseconds::zero();  // 0初始化
-
-                for(size_t k=0; k < rec.size() && rec[k].t_now < time_all; ++k){
-                    if (rec[k].inside_obstacle == -1){
-                        if (!former_good){
-                            // 这时候不在Obstacle里面 但前一时刻在
-                            first_good = rec[k].t_now;
-                            former_good = true;
-                        }
-                    }
-                    else if (former_good){
-                       // 现在在Obstacle里但上一时刻还好好的
-                       time_good[robot_index] += duration_cast<milliseconds>(rec[k].t_now - first_good);
-                       former_good = false;
-                    }
-                }
-                // 结束的时候 如果最后一段是good 就加进去
-                if (former_good){
-                    time_good[robot_index] += duration_cast<milliseconds>(time_all - first_good);
-                }
-                */
 
                 // 上方函数的镜像
                 // 用来做DoubleCheck

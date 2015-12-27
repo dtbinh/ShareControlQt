@@ -4,6 +4,7 @@
 #include <mutex>
 #include <atomic>
 #include <chrono>
+#include <set>
 #include "basic/app-share.hpp"
 #include "RobotItem.h"
 #include "ObstacleItem.h"
@@ -27,6 +28,10 @@ struct UserCommandRecord{
     int   robotID;
 };
 
+enum class UserExpType{
+    exercise,
+};
+
 class CoreData
     :public BasicExperimentConfig
 {
@@ -36,20 +41,47 @@ public:
     std::mutex      guard;
 
     // 这些都是运行中的设置
-    atomic_bool experiment_running;
+    //atomic_bool experiment_running;
     float Kusr_scr  = 2.5f;  // 2.5m时对应Kusr_base大小的干预量
     float Kusr_base = 10.0f;
     float decay_time = 2.0f;
-    TargetType user_type = TargetType::velocity;
-
-    // 其他的设置
-    atomic_bool isPlacingTrace;
-    atomic_bool isPlacingRobot;
-    //std::vector<int> addedUserTarget;
+    TargetType user_type = TargetType::position;
 
 public:
     // 产生障碍物于obstacles中
     void generateObstacles();
+    void show_obstacles(int group = 0){
+        if (group == 0){
+            for (auto& ob: obstacles){
+                ob.pItem->show();
+                ob.pItem->highlight = false;
+            }
+        }
+        else{
+            size_t i = 0;
+            obstacles[i].pItem->show();
+            obstacles[i].pItem->highlight = false;
+            i = 3;
+            obstacles[i].pItem->show();
+            obstacles[i].pItem->highlight = false;
+        }
+    }
+    void hide_obstacles(int group = 0){
+        if (group == 0){
+            for (auto& ob: obstacles){
+                ob.pItem->hide();
+                ob.pItem->highlight = false;
+            }
+        }
+        else{
+            size_t i = 0;
+            obstacles[i].pItem->hide();
+            obstacles[i].pItem->highlight = false;
+            i = 3;
+            obstacles[i].pItem->hide();
+            obstacles[i].pItem->highlight = false;
+        }
+    }
 
     // 添加机器人
     void add_robot(int ID, qreal x = 0, qreal y = 0, qreal heading = 90, bool show_info = true);
@@ -84,16 +116,15 @@ public:
     // 其他的设置
     bool newTargetAsReplace = false;  // 新的UserTarget是按Replace还是按叠加
     bool useDefaultFromClient = true; // 当ResetConfig的时候 是否是从Client处获得(否则就按默认构造函数处理)
-    bool useObstacles = false;         // 要不要显示障碍物
+    bool useObstacles   = false;       // 要不要显示障碍物
     bool showNearObOnly = false;       // 障碍物要不要只在靠近的时候显示
-    float detect_range = 1;            // 如果动态显示障碍物的话，那么在距离多远的时候显示
+    float detect_range  = 1;           // 如果动态显示障碍物的话，那么在距离多远的时候显示
+    std::chrono::seconds exp_time;      // 实验时间
 };
 
 
 inline CoreData::CoreData(){
-    experiment_running = false;
-    isPlacingRobot = false;
-    isPlacingTrace = false;
+    //experiment_running = false;
 }
 
 #endif // COREDATA_H

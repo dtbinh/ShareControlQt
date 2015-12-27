@@ -9,7 +9,7 @@
 #include "Util/UserArrow.h"
 #include "CoreData.h"
 #include "ObstacleItem.h"
-
+#include <atomic>
 
 enum class SceneMode{
     control_interface,  // 发送User箭头，自动确定离哪个robot最近 不能移动
@@ -38,7 +38,7 @@ protected:
     void mouseMoveEvent(QGraphicsSceneMouseEvent * mouseEvent);
     void mouseReleaseEvent(QGraphicsSceneMouseEvent * mouseEvent);
     void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event);
-    void wheelEvent(QGraphicsSceneWheelEvent * wheelEvent);
+    //void wheelEvent(QGraphicsSceneWheelEvent * wheelEvent);
 
 signals:
     void newUserSlideMotion(int robotID, QPointF start, QPointF dx);
@@ -53,8 +53,6 @@ public slots:
 
     // 改变当前模式
     void setSceneMode(SceneMode _mode);
-    void intoPlaceRobot()       {setSceneMode(SceneMode::placing_robots);}
-    void intoControlInterface() {setSceneMode(SceneMode::control_interface);}
 
     // 把Tunnel画上去\擦掉
     void onSetupTunnel(double R, double r);
@@ -73,9 +71,12 @@ public:
         }
     }
     void addObstacles(ObstacleItem& obstacle){
-        this->addItem(obstacle.make_item(myCoordination));
+        QGraphicsItem* item = obstacle.make_item(myCoordination);
+        item->hide();
+        this->addItem(item);
     }
 
+    // 画机器人
     void addRobot(RobotItem& robot){
         robot.setCoordination(myCoordination);  // 用新坐标系
         this->addItem(robot.robot.get());
@@ -88,6 +89,7 @@ public:
     }
 
 public:
+    std::atomic_bool mode_changing;
     bool mousePressed = false;
     bool doubleClicked = false;
     bool isTraceMode = false;
@@ -120,7 +122,7 @@ signals:
     void programExit();
 
 protected:
-    void wheelEvent(QWheelEvent * event);
+    //void wheelEvent(QWheelEvent * event);
     void closeEvent(QCloseEvent * event){
         emit programExit();
     }

@@ -1,3 +1,4 @@
+
 #ifndef EXTERNALCONTROL_H
 #define EXTERNALCONTROL_H
 
@@ -34,21 +35,17 @@ signals:
 
 public slots:
     // Basic Setup
-    void onSetCurrentConfig();
-    void onResetCurrentConfig();
 
-    void onSetNewTrace(int robotID, QPointF start, QPointF dx);
+    // void onResetCurrentConfig();
 
-    void onStartExperiment();
-    void onStopExperiment();
-
+    // void onSetNewTrace(int robotID, QPointF start, QPointF dx);
     // Used by switched experiment
-    void onToAutonomous(int robotID);
-    void onToTeleoperation(int robotID, QPointF start, QPointF dx);
+    // void onToAutonomous(int robotID);
+    // void onToTeleoperation(int robotID, QPointF start, QPointF dx);
 
     // Used by share experiment
-    void onNewUserTarget(int robotID, QPointF start, QPointF dx);
-    void onRemoveLastTarget(int robotID);
+    // void onNewUserTarget(int robotID, QPointF start, QPointF dx);
+    // void onRemoveLastTarget(int robotID);
 
     // Used by tunnel experiment
     void onNewTunnelTarget(int robotID, QPointF start, QPointF dx);
@@ -56,18 +53,15 @@ public slots:
     void onUserSetFree(int robotID);
 
     // Used by direct blend experiment
-    void onDirectBlend_NewCmd(int robotID, QPointF start, QPointF dx);
-    void onDirectBlend_ReplaceLast(int robotID, QPointF start, QPointF dx);
-    void onDirectBlend_RemoveLast(int robotID);
-    void onDirectBlend_RemoveAll(int robotID);
+    // void onDirectBlend_NewCmd(int robotID, QPointF start, QPointF dx);
+    // void onDirectBlend_ReplaceLast(int robotID, QPointF start, QPointF dx);
+    // void onDirectBlend_RemoveLast(int robotID);
+    // void onDirectBlend_RemoveAll(int robotID);
 
     // Used to close all programs
-    void onCloseClients();
-
 public:
     void connect(const client_data& client);
     void connect(const std::vector<client_data>& client_list, const std::set<int>& except = {});
-
 
     void start_updating(){
         isUpdating = true;
@@ -79,6 +73,12 @@ public:
 protected:
     void handle_sub(int ID, int type, void* data, size_t size);
     void timerEvent(QTimerEvent *event);    // 异步发送UserInput的方式
+
+public slots:
+    void onSetCurrentConfig();
+    void onStartExperiment();
+    void onStopExperiment();
+    void onCloseClients();
 
 public:
     Agent       agent;

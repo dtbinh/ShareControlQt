@@ -14,10 +14,10 @@ TEMPLATE = app
 
 INCLUDEPATH += "$$(myLibrary)\ZeroMQ\4_1_3\include"
 INCLUDEPATH += "$$(myCode)\MultiAgent\libnetagent\_src"
+INCLUDEPATH += "$$(myCode)\MultiAgent\libconfig\_src"
 INCLUDEPATH += "$$(myCode)\MultiAgent\ShareControl201509\_src2"
 
 SOURCES += main.cpp\
-    ControlPanel.cpp \
     RobotItem.cpp \
     MainWindow.cpp \
     ExternalControl.cpp \
@@ -25,12 +25,13 @@ SOURCES += main.cpp\
     Util/RobotInfoItem.cpp \
     Util/UserArrow.cpp \
     CoreData.cpp \
-    ObstacleItem.cpp
+    ObstacleItem.cpp \
+    ControlNew.cpp \
+    ExpA.cpp
 
 HEADERS  += \
     RobotItem.h \
     MainWindow.h \
-    ControlPanel.h \
     zmq.hpp \
     ExternalControl.h \
     Util/Auxilary.h \
@@ -38,17 +39,21 @@ HEADERS  += \
     Util/RobotInfoItem.h \
     Util/UserArrow.h \
     CoreData.h \
-    ObstacleItem.h
+    ObstacleItem.h \
+    ControlNew.h \
+    ExpA.h
 
 FORMS    += mainwindow.ui \
-            controlpanel.ui
+    controlnew.ui
 
 Debug{
-    LIBS += -L"$$(myCode)\MultiAgent\libnetagent\Debug\v120" -llibnetagent
+    LIBS += -L"$$(myCode)\MultiAgent\libnetagent\Debug\v120"  -llibnetagent
+    LIBS += -L"$$(myCode)\MultiAgent\libconfig\Debug"         -llibconfig
     LIBS += -L"$$(myLibrary)\ZeroMQ\4_1_3\Debug\v120\dynamic" -llibzmq
 }
 
 Release{
-    LIBS += -L"$$(myCode)\MultiAgent\libnetagent\Release\v120" -llibnetagent
+    LIBS += -L"$$(myCode)\MultiAgent\libnetagent\Release\v120"  -llibnetagent
+    LIBS += -L"$$(myCode)\MultiAgent\libconfig\Release"         -llibconfig
     LIBS += -L"$$(myLibrary)\ZeroMQ\4_1_3\Release\v120\dynamic" -llibzmq
 }

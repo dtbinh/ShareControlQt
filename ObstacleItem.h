@@ -24,7 +24,6 @@ public:
 
 public:
     bool   highlight = false;
-
     int ID;
 protected:
     qreal x,  y;

@@ -146,7 +146,7 @@ public:
 
 protected:
     std::mutex guard;
-    UserInputType user_input;
+    UserInputType user_input = UserInputType::none;
     QPointF u_start, u_dx;
 };
 
