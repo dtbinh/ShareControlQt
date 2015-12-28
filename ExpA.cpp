@@ -1,5 +1,8 @@
 #include "ExpA.h"
 #include <chrono>
+#include <QTextCodec>
+#include <Shlwapi.h>
+#include <iostream>
 using _cfg::section;
 using std::chrono::milliseconds;
 using std::chrono::seconds;
@@ -39,19 +42,38 @@ void ExpA::run(){
     }
 }
 
+BOOL DirectoryExists(LPCTSTR szPath)
+{
+  DWORD dwAttrib = GetFileAttributes(szPath);
+
+  return (dwAttrib != INVALID_FILE_ATTRIBUTES &&
+         (dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
+}
+
 void ExpA::prepare_stop(){
     data->t_end = steady_clock::now();
     s->setSceneMode(SceneMode::placing_robots);
     emit stop_experiment();
     qDebug()<<"Experiment stopped";
 
+
     // 事后：分析、存储数据
     if (!this->isExercise){
+        QString dir = c->getName();
+        auto str = dir.toStdWString().c_str();
+        CreateDirectory(dir.toStdWString().c_str(), nullptr);
         if (use_TTT){
-            data->saveExperimentData("expTTT");
+            if (!data->saveExperimentData(QString("%1\\expTTT").arg(dir))){
+                qDebug()<<"Error Creating File for TTT, use default ";
+                data->saveExperimentData(QString("expTTT"));
+            }
+
         }
         else{
-            data->saveExperimentData("expNon");
+            if (!data->saveExperimentData(QString("%1\\expNon").arg(dir))){
+                qDebug()<<"Error Creating File for TTT, use default ";
+                data->saveExperimentData(QString("expNon"));
+            }
         }
         data->analyzeData();
     }

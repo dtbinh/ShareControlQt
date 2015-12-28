@@ -9,7 +9,6 @@
 #include <exception>
 #include <config.hpp>
 #include <QObject>
-
 #include "zmq.hpp"
 #include "ExternalControl.h"
 
@@ -58,6 +57,13 @@ void load_configA(section& config, CoreData& data){
     // Set up environment
     data.tunnel_R = config.get<double>("tunnel_R");
     data.tunnel_r = config.get<double>("tunnel_r");
+
+    int ob_type;
+    if (config.get_exist("ob_type", ob_type) == true){
+        if (ob_type == 1) data.ob_using = CoreData::ObstacleSet::staticVersion;
+        if (ob_type == 2) data.ob_using = CoreData::ObstacleSet::dynamicVersion;
+    }
+
     data.generateObstacles();
     qDebug()<<QString("R = %1, r = %2").arg( data.tunnel_R).arg( data.tunnel_r);
 
@@ -97,7 +103,7 @@ int main(int argc, char *argv[]){
 
     qDebug()<<"Loading Config";
     load_configA(config, data);
-    ExpA expA(&s, &ext, &data, &config);
+    ExpA expA(&s, &ext,  &pannel, &data, &config);
 
     qDebug()<<QString("R = %1, r = %2").arg( data.tunnel_R).arg( data.tunnel_r);
     s.onSetupTunnel(data.tunnel_R, data.tunnel_r);
@@ -110,15 +116,20 @@ int main(int argc, char *argv[]){
     QObject::connect(&ext, &ExternalControl::newPosition,
                      &s,   &MainScene::updateRobot);
     QObject::connect(&expA, &ExpA::start_experiment,
-                     &ext,  &ExternalControl::onStartExperiment);
-    QObject::connect(&expA, &ExpA::prepare_start,
-                     &s,    &MainScene::onPrepareStart);
-    QObject::connect(&expA, &ExpA::stop_experiment,
-                     &ext,  &ExternalControl::onStopExperiment);
-    QObject::connect(&pannel, &ControlNew::stop_exp,
-                     &expA, &ExpA::prepare_stop);
+                     &ext,  &ExternalControl::onStartExperiment); // 向下发送开始命令 开始碰撞检测线程
     QObject::connect(&expA,  &ExpA::new_autoStop,
-                     &pannel, &ControlNew::on_newAutoStop);
+                     &pannel, &ControlNew::on_newAutoStop);       // 开始实验倒计时的Timer
+    QObject::connect(&expA, &ExpA::prepare_start,
+                     &s,    &MainScene::onPrepareStart);          // 把轨道和障碍都画出来, reset
+    QObject::connect(&expA, &ExpA::start_experiment,
+                     &s,    &MainScene::onExperimentStart);       // 开始obstacle移动线程 重置其初态
+    QObject::connect(&pannel, &ControlNew::stop_exp,
+                     &expA,   &ExpA::prepare_stop);               // expA开始停止实验
+    QObject::connect(&expA, &ExpA::stop_experiment,
+                     &ext,  &ExternalControl::onStopExperiment);  // 向下发送停止命令
+    QObject::connect(&expA, &ExpA::stop_experiment,
+                     &s,    &MainScene::onExperimentStop);        // 停止障碍物移动 障碍物隐藏
+
 
     // 退出信号
     QObject::connect(&pannel, &ControlNew::program_exit,

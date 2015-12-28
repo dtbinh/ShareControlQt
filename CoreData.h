@@ -28,8 +28,27 @@ struct UserCommandRecord{
     int   robotID;
 };
 
+struct ObstacleLineData{
+    ObstacleLineData(){}
+    ObstacleLineData(int nxt, qreal x, qreal y, int ms):
+        line_next(nxt), start_point(x,y), T(ms){}
+    int     line_next;
+    QPointF start_point;
+    std::chrono::milliseconds  T;
+};
+
+struct ObstacleMotionData{
+    ObstacleMotionData(){}
+    std::chrono::steady_clock::time_point t0;
+    double line_spd;    // 线速度
+    double angl_spd;    // 角速度
+    double amplitude;   // 幅值
+    int    lineID;      // 0, 1, 2, 3 for left
+    static std::vector<ObstacleLineData> line;
+};
+
 enum class UserExpType{
-    exercise,
+    exercise
 };
 
 class CoreData
@@ -56,6 +75,8 @@ public:
                 ob.pItem->show();
                 ob.pItem->highlight = false;
             }
+            obstacles[0].pItem->hide();
+            obstacles[2].pItem->hide();
         }
         else{
             size_t i = 0;
@@ -82,6 +103,8 @@ public:
             obstacles[i].pItem->highlight = false;
         }
     }
+    void update_obstacle();
+    void reset_obstacle_position();
 
     // 添加机器人
     void add_robot(int ID, qreal x = 0, qreal y = 0, qreal heading = 90, bool show_info = true);
@@ -101,14 +124,22 @@ public:
     // 记录数据 检查有没有撞上障碍等
     void onNewRobotPositions(int ID, const RobotStateData& state);
     // 保存数据
-    void saveExperimentData(QString prefix = "");
+    bool saveExperimentData(QString prefix = "");
     // 分析数据
     void analyzeData();
 
-    //std::vector<pGraphicsRobotItem> robots;         // 这里应该放的是RobotItem才对...
+    // Robot Items
     std::map<int, size_t>           IDtoIndex;
     std::vector<RobotItem>          robots;
+
+    // Obstacle Items
     std::vector<ObstacleItem>       obstacles;
+    std::vector<ObstacleMotionData> ob_motion;
+    std::set<int> ob_move;  // which obstacles are moving
+    enum class ObstacleSet{
+        staticVersion, dynamicVersion
+    };
+    ObstacleSet ob_using = ObstacleSet::staticVersion;
 
     // 记录实验过程
     std::vector<std::vector<StateRecord>> rec_state;

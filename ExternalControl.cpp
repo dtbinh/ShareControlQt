@@ -56,23 +56,6 @@ void ExternalControl::handle_sub(int ID, int type, void* _data, size_t size){
 }
 
 /*
- * 处理来自MainScene的NewTrace
-*/
-/*
-void ExternalControl::onSetNewTrace(int robotID, QPointF start, QPointF dx){
-    if (data){
-        double th = atan2(dx.y(), dx.x());
-        int angle = th*180 / 3.141592654;
-
-        qDebug()<<QString("(%1, %2) - %3").arg(start.x()).arg(start.y()).arg(angle);
-
-        data->traceDefinition.x = start.x();
-        data->traceDefinition.y = start.y();
-        data->traceDefinition.heading = angle;
-    }
-}
-*/
-/*
  * 向Client发送全局命令
 */
 void ExternalControl::onSetCurrentConfig(){
@@ -88,32 +71,7 @@ void ExternalControl::onSetCurrentConfig(){
         //qDebug()<<"reply is "<<rep;
     }
 }
-/*
-void ExternalControl::onResetCurrentConfig(){
-    int robotID = 1;
-    if (data){
-        if (data->useDefaultFromClient){
-            BasicExperimentConfig* config;
 
-            // 如果要恢复默认设置，则以Robot1的设置为准
-            agent.request(robotID, int(myEvent::Basic::requestBasicConfig));
-
-            config = agent.get_more_reply<BasicExperimentConfig>();
-            if (config != nullptr){
-                *(BasicExperimentConfig*)data = *config;
-                emit this->configRefreshed();
-            }
-            else{
-                qDebug()<<QString("Failed to get config from the robot");
-            }
-        }
-        else{
-            *(BasicExperimentConfig*)data = BasicExperimentConfig();
-            emit this->configRefreshed();
-        }
-    }
-}
-*/
 void ExternalControl::onStartExperiment(){    
     agent.broadcast(int(myEvent::Basic::startExperiment));
     this->isUpdating = true;
@@ -134,92 +92,6 @@ void ExternalControl::onStopExperiment(){
    agent.broadcast(int(myEvent::Basic::stopExperiment));
 }
 
-/*
- * Swithced Experiment
-*/
-/*
-void ExternalControl::onToAutonomous(int robotID){
-    if (data){
-        if (data->experimentID == ExpUsing::expSwitch){
-            int rep = agent.request(robotID, (int)myEvent::Switch::toAutonomous);
-            if (rep != (int)myReply::good){
-                qDebug()<<QString("Fail to send toAuto Request");
-            }
-            qDebug()<<QString("toAuto Request Sended");
-        }
-    }
-}
-void ExternalControl::onToTeleoperation(int robotID, QPointF start, QPointF dx){
-    if (data){
-        if (data->experimentID == ExpUsing::expSwitch){
-           double th = atan2(dx.y(), dx.x());
-           int angle = th*180 / 3.141592654;
-
-           TraceDataEX user_target;
-           user_target.x = start.x();
-           user_target.y = start.y();
-           user_target.heading = angle;
-           user_target.type = data->user_type;
-
-           int rep = agent.request(robotID, (int)myEvent::Switch::toTeleoperation, &user_target, sizeof(TraceDataEX));
-           if (rep != (int)myReply::good){
-               qDebug()<<QString("Fail to send toTele Request");
-           }
-           qDebug()<<QString("toTele Request Sended (%1, %2) - %3").arg(user_target.x).arg(user_target.y).arg(user_target.heading);
-        }
-    }
-}
-*/
-/*
- * Shared Experiment
-*/
-/*
-void ExternalControl::onNewUserTarget(int robotID, QPointF start, QPointF dx){
-    if (data){
-        if (data->experimentID == ExpUsing::expShared){
-            double th = atan2(dx.y(), dx.x());
-            double sz = sqrt(dx.x()*dx.x() + dx.y()*dx.y());
-            int angle = th*180 / 3.141592654;
-
-            double ratio = (sz / data->Kusr_scr);
-            if (ratio >= 2.5) ratio = 2.5;
-            float Kusr = data->Kusr_base * ratio;
-
-
-            TraceDataWithBlend user_target;
-            user_target.x = start.x();
-            user_target.y = start.y();
-            user_target.heading = angle;
-            user_target.type = data->user_type;
-            user_target.K = Kusr;
-            user_target.q0 = 1;
-            user_target.secondsToDieOut = data->decay_time;
-
-            int rep = agent.request(robotID, (int)myEvent::Shared::newUserTarget, &user_target, sizeof(TraceDataWithBlend));
-            if (rep != (int)myReply::good){
-                qDebug()<<QString("Failed to add new user target");
-            }
-            else{
-                qDebug()<<QString("The %1-th request added").arg(rep);
-                qDebug()<<"\t"<<QString("(%1, %2) - %3").arg(user_target.x).arg(user_target.y).arg(user_target.heading);
-                qDebug()<<"\t"<<QString("K = %1, decay = %2").arg(user_target.K).arg(user_target.secondsToDieOut);
-            }
-        }
-    }
-}
-
-void ExternalControl::onRemoveLastTarget(int robotID){
-    if (data){
-        if (data->experimentID == ExpUsing::expShared){
-            int rep = agent.request(robotID, int(myEvent::Shared::removeUserTarget), nullptr, 0);
-            if (rep != (int)myReply::good){
-                qDebug()<<QString("Fail to Remove The Earliest User Target");
-            }
-            qDebug()<<QString("User Target Removed");
-        }
-    }
-}
-*/
 /*
  * Tunnel Experiment
 */
@@ -320,91 +192,3 @@ void ExternalControl::onRemoveAllTunnelTarget(int robotID){
         }
     }
 }
-
-/*
- * Direct Linear Blend Experiment
-*/
-/*
-void ExternalControl::onDirectBlend_NewCmd(int robotID, QPointF start, QPointF dx){
-    if (data){
-        double th = atan2(dx.y(), dx.x());
-        double sz = sqrt(dx.x()*dx.x() + dx.y()*dx.y());
-        int angle = th*180 / 3.141592654;
-
-        double ratio = (sz / data->Kusr_scr);
-        if (ratio >= 2.5) ratio = 2.5;
-        float Kusr = data->Kusr_base * ratio;
-
-        DirectBlendData new_cmd;
-        new_cmd.x       = start.x();
-        new_cmd.y       = start.y();
-        new_cmd.type    = data->user_type;
-        new_cmd.heading = angle;
-        new_cmd.K       = Kusr;
-        new_cmd.secondsToDieOut = data->decay_time;
-        new_cmd.q0      = 1;
-
-        int rep = agent.request(robotID, (int)myEvent::DirectBlend::newCommand, &new_cmd, sizeof(DirectBlendData));
-        if (rep != (int)myReply::good){
-            qDebug()<<QString("Failed to send new command");
-        }
-        else{
-            qDebug()<<QString("New direct blend data sended, K = %1").arg(Kusr);
-        }
-    }
-}
-
-void ExternalControl::onDirectBlend_ReplaceLast(int robotID, QPointF start, QPointF dx){
-    if (data){
-        double th = atan2(dx.y(), dx.x());
-        double sz = sqrt(dx.x()*dx.x() + dx.y()*dx.y());
-        int angle = th*180 / 3.141592654;
-
-        double ratio = (sz / data->Kusr_scr);
-        if (ratio >= 2.5) ratio = 2.5;
-        float Kusr = data->Kusr_base * ratio;
-
-        DirectBlendData new_cmd;
-        new_cmd.x       = start.x();
-        new_cmd.y       = start.y();
-        new_cmd.type    = data->user_type;
-        new_cmd.heading = angle;
-        new_cmd.K       = Kusr;
-        new_cmd.secondsToDieOut = data->decay_time;
-        new_cmd.q0      = 1;
-
-        int rep = agent.request(robotID, (int)myEvent::DirectBlend::replaceLastCommand, &new_cmd, sizeof(DirectBlendData));
-        if (rep != (int)myReply::good){
-            qDebug()<<QString("Failed to replace last command");
-        }
-        else{
-            qDebug()<<QString("New direct blend data sended, K = %1").arg(Kusr);
-        }
-
-    }
-}
-
-void ExternalControl::onDirectBlend_RemoveLast(int robotID){
-    if (data){
-        int rep = agent.request(robotID, (int)myEvent::DirectBlend::removeLastCommand, nullptr, 0);
-        if (rep != (int)myReply::good){
-            qDebug()<<QString("Failed to remove last command");
-        }
-        else{
-            qDebug()<<QString("Direct Blend : Remove Last");
-        }
-    }
-}
-
-void ExternalControl::onDirectBlend_RemoveAll(int robotID){
-    if (data){
-        int rep = agent.request(robotID, (int)myEvent::DirectBlend::toAtuonomous, nullptr, 0);
-        if (rep != (int)myReply::good){
-            qDebug()<<"Failed to remove all command";
-        }
-        else{
-            qDebug()<<QString("Direct Blend : Remove All Targets");
-        }
-    }
-}
-*/

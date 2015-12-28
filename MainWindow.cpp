@@ -252,6 +252,12 @@ void MainScene::updateRobot(int ID, qreal x, qreal y, qreal heading){
     }
 }
 
+void MainScene::timerEvent(QTimerEvent *event){
+    if (event->timerId() == this->myObstacleUpdateTimer){
+        data->update_obstacle();
+    }
+}
+
 /*
  * MainWindow
  */

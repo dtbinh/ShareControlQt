@@ -35,6 +35,10 @@ ControlNew::ControlNew(QWidget *parent) :
     });
 }
 
+QString ControlNew::getName(){
+    return this->ui->leName->text();
+}
+
 void ControlNew::on_expStopped(){   // 当实验自动停止时
     if (myAutoStopTimer){
         this->killTimer(myAutoStopTimer);

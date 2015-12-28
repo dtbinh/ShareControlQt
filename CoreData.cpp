@@ -3,6 +3,8 @@
 #include <QTextStream>
 #include <QFile>
 
+// 静态类型声明
+std::vector<ObstacleLineData> ObstacleMotionData::line;
 
 void CoreData::add_robot(int ID, qreal x, qreal y, qreal heading, bool show_info){
     auto it = IDtoIndex.find(ID);
@@ -53,9 +55,20 @@ void CoreData::reset_robot_positions(){
     }
 }
 
+void CoreData::reset_obstacle_position(){
+    using std::chrono::milliseconds;
+    if (ob_using == ObstacleSet::dynamicVersion){
+        auto t0 = std::chrono::steady_clock::now();
+        auto& line = ObstacleMotionData::line;
+        ob_motion[0].t0 = t0 - line[ob_motion[0].lineID].T / 2;
+        ob_motion[1].t0 = t0 - line[ob_motion[1].lineID].T / 4;
+        ob_motion[2].t0 = t0 - line[ob_motion[2].lineID].T / 2;
+        ob_motion[3].t0 = t0 - line[ob_motion[3].lineID].T / 4;
+    }
+}
+
 void CoreData::generateObstacles(){
-    // 产生针对于Tunnel实验的障碍物
-    if (experimentID == ExpUsing::expTunnel){
+    if (ob_using == ObstacleSet::staticVersion){
         obstacles.clear();
         double R = tunnel_R;
         double r = tunnel_r;
@@ -73,7 +86,94 @@ void CoreData::generateObstacles(){
                        {-R/2, -(R-r+dr), r2, r2, shape},
                       };
     }
+
+    if (ob_using == ObstacleSet::dynamicVersion){
+        obstacles.clear();
+        ObstacleMotionData::line.clear();
+
+        double R = tunnel_R;
+        double r = tunnel_r;
+        double r2 = r / 3;
+        ObstacleShape shape = ObstacleShape::Circle;
+
+        // 定义障碍物的轨道信息
+        double v0 = this->standardVelocity / 1000.0; // 原先是mm/s 变成m/s
+        int T = int(2*R/v0 * 1000 + 0.5); // 与小车速度相同
+        ObstacleMotionData::line = {
+            {3, -R, R, T}, // this is 0, next is 3, anti-clockwise
+            {2, R, R, T},
+            {1, R, -R, T},
+            {0, -R, -R, T}
+        };
+
+        // 定义障碍物
+        int total_num = 4;
+        obstacles.resize(total_num);
+        ob_motion.resize(total_num);
+        ob_move = {0, 1, 2, 3};
+
+        double amplitude = r/6;  // 振动幅值
+        int    n_cycle = 2;     // 每条线上面振多少圈
+        const double pi = 3.14159265358979324;
+        double w = 2*pi / (T/1000.0) * n_cycle; // 即每一圈的周期是T / n_cycle
+                                                // T之前是ms单位的
+
+        for (int i=0;i<4;++i){
+            obstacles[i] = {0,0, r2,r2,shape}; // 坐标不重要 会由之后的位置决定
+            ob_motion[i].lineID = i;
+            ob_motion[i].amplitude = amplitude;
+            ob_motion[i].line_spd = v0;
+            ob_motion[i].angl_spd = w;
+        }
+    }
 }
+
+void CoreData::update_obstacle(){
+    using std::chrono::milliseconds;
+    using std::chrono::seconds;
+    using std::chrono::duration_cast;
+    using std::chrono::steady_clock;
+    auto& line = ObstacleMotionData::line;
+
+    if (ob_using == ObstacleSet::dynamicVersion){
+        for (int i : ob_move){
+            if (!obstacles[i].pItem->isVisible())
+                continue;
+            int& lineID = ob_motion[i].lineID;
+            auto t_now = steady_clock::now();
+            milliseconds t = duration_cast<milliseconds>(t_now - ob_motion[i].t0);
+            if (t > line[lineID].T){
+                // 这条线跑完了
+                t = t - line[lineID].T;
+                ob_motion[i].t0 = t_now - t;
+                lineID = line[lineID].line_next;
+            }
+            qreal x = line[lineID].start_point.x();
+            qreal y = line[lineID].start_point.y();
+            if (lineID == 0){
+                y -= ob_motion[i].line_spd * (t.count() / 1000.0);
+                x += ob_motion[i].amplitude * sin(ob_motion[i].angl_spd * (t.count() /1000.0));
+            }
+            else if (lineID == 1){
+                x -= ob_motion[i].line_spd * (t.count() / 1000.0);
+                y += ob_motion[i].amplitude * sin(ob_motion[i].angl_spd * (t.count() /1000.0));
+            }
+            else if (lineID == 2){
+                y += ob_motion[i].line_spd * (t.count() / 1000.0);
+                x += ob_motion[i].amplitude * sin(ob_motion[i].angl_spd * (t.count() /1000.0));
+            }
+            else if (lineID == 3){
+                x += ob_motion[i].line_spd * (t.count() / 1000.0);
+                y += ob_motion[i].amplitude * sin(ob_motion[i].angl_spd * (t.count() /1000.0));
+            }
+            else{
+                qDebug()<<"Invaild lineID for obstacle update...";
+            }
+            obstacles[i].setRealPos(x, y);
+        }
+    }
+}
+
 
 void CoreData::onNewRobotPositions(int ID, const RobotStateData& state){
     using std::chrono::steady_clock;
@@ -113,7 +213,7 @@ void CoreData::onNewRobotPositions(int ID, const RobotStateData& state){
     }
 }
 
-void CoreData::saveExperimentData(QString prefix){
+bool CoreData::saveExperimentData(QString prefix){
     if (!rec_state.empty() && !rec_state.front().empty()){
         qDebug()<<QString("total records : %1").arg(rec_state[0].size());
         qDebug()<<QString("total time    : %1 ms").arg(std::chrono::duration_cast<std::chrono::milliseconds>(t_end - t_start).count());
@@ -123,7 +223,7 @@ void CoreData::saveExperimentData(QString prefix){
             QFile file(fname);
             if (!file.open(QIODevice::WriteOnly)){
                 qDebug()<<"Failed to open file";
-                return;
+                return false;
             }
             QTextStream out(&file);
             auto& rec = rec_state[robot_index];
@@ -151,7 +251,7 @@ void CoreData::saveExperimentData(QString prefix){
         QFile file(fname);
         if (!file.open(QIODevice::WriteOnly)){
             qDebug()<<"Failed to open file";
-            return;
+            return false;
         }
         QTextStream out(&file);
         out << "t  ID  type  x  y  dx  dy"<<endl;
@@ -170,6 +270,7 @@ void CoreData::saveExperimentData(QString prefix){
     }else{
         qDebug()<<"No user input has been recorded";
     }
+    return true;
 }
 
 void CoreData::analyzeData(){

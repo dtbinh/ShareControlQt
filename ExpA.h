@@ -8,6 +8,7 @@
 #include "CoreData.h"
 #include <config.hpp>
 #include "ExternalControl.h"
+#include "ControlNew.h"
 
 
 class ExpA : public QThread
@@ -23,12 +24,13 @@ signals:
     void new_autoStop(int ms);
 public:
     explicit ExpA(QObject *parent = 0):QThread(parent){}
-    explicit ExpA(MainScene* s, ExternalControl* ext, CoreData *data, _cfg::section *config, QObject *parent = 0):
-        QThread(parent), s(s), ext(ext),data(data),config(config){}
+    explicit ExpA(MainScene* s, ExternalControl* ext, ControlNew* c, CoreData *data, _cfg::section *config, QObject *parent = 0):
+        QThread(parent), s(s), ext(ext), c(c), data(data),config(config){}
 
 
     MainScene *s;
     ExternalControl *ext;
+    ControlNew* c;
     CoreData *data;
     _cfg::section *config;
 

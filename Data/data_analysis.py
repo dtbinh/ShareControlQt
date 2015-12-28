@@ -49,8 +49,8 @@ def process_dir_part(dir_name, robot_num, isTTT):
             res = process_statefile(dir_name, isTTT, i)
             n_hit = n_hit + res[0]
             time_hit = time_hit + res[1]
-        results['score'] = time_hit
-        results['score_avr'] = time_hit / n_hit
+        results['score_time'] = time_hit
+        results['score_hit']  = n_hit
     except FileNotFoundError:
         expName = 'TTT' if isTTT else 'Non-TTT'
         print('No {} experiment state results or results incomplete'.format(expName))
@@ -59,18 +59,28 @@ def process_dir_part(dir_name, robot_num, isTTT):
         res = process_userfile(dir_name, isTTT)
         n_intervene = res[0]
         time_intervene = res[1]
-        results['workload'] = time_intervene
-        results['efficiency'] = time_intervene/n_intervene
+        results['workload']   = time_intervene
+        results['efficiency'] = round(time_intervene/n_intervene)
     except FileNotFoundError:
         expName = 'TTT' if isTTT else 'Non-TTT'
         print('No {} experiment user input records'.format(expName))
 
     return results
-    
-def process_dir(dir_name, robot_num):
+
+def print_dict(dct, level = 0):
+    for key in dct:
+        if type(dct[key]) == dict:
+            print('\t'*level + key + ':')
+            print_dict(dct[key], level + 1)
+        else:
+            print('\t'*level + '{0} = {1}'.format(key, dct[key]))
+
+def process_dir(dir_name = '', robot_num = 4):
     resTTT = process_dir_part(dir_name, robot_num, True)
     resNon = process_dir_part(dir_name, robot_num, False)
-    return {'TTT':resTTT, 'Non':resNon}
+    res = {'TTT':resTTT, 'Non':resNon}
+    print_dict(res)
+    return
     
 
     

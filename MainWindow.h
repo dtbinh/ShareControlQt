@@ -40,6 +40,8 @@ protected:
     void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event);
     //void wheelEvent(QGraphicsSceneWheelEvent * wheelEvent);
 
+    void timerEvent(QTimerEvent *event);
+
 signals:
     void newUserSlideMotion(int robotID, QPointF start, QPointF dx);
     void newUserDoubleClick(int robotID);
@@ -63,6 +65,28 @@ public slots:
 
     void onPrepareStart(){
         data->reset_robot_positions();
+        data->reset_obstacle_position();
+        data->update_obstacle();
+        update();
+    }
+    void onExperimentStart(){
+        if (data->ob_using == CoreData::ObstacleSet::dynamicVersion){
+            data->reset_obstacle_position();
+            myObstacleUpdateTimer = this->startTimer(50);
+            if (myObstacleUpdateTimer == 0){
+                qDebug()<<"Failed to Start Obastacle Update Timer";
+            }
+            else{
+                qDebug()<<"Obstacle moving timer started for 50 ms";
+            }
+            data->update_obstacle();
+        }
+    }
+    void onExperimentStop(){
+        if (myObstacleUpdateTimer){
+            killTimer(myObstacleUpdateTimer);
+            myObstacleUpdateTimer = 0;
+        }
     }
 
 public:
@@ -108,6 +132,8 @@ public:
     QTransform myInvert;
 
     CoreData* data = nullptr;
+protected:
+    int myObstacleUpdateTimer = 0;
 };
 
 

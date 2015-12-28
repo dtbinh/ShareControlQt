@@ -20,7 +20,7 @@ class ControlNew : public QWidget
 public:
     explicit ControlNew(QWidget *parent = 0);
     ~ControlNew();
-
+    QString getName();
 signals:
     void start_exp1(bool isExercise);
     void start_exp2(bool isExercise);

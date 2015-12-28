@@ -53,17 +53,21 @@ QGraphicsItem* ObstacleItem::make_item(CoordinateSystem* xyz){
     qreal unitY = !xyz ? 1 :
                    xyz->YHeading() == AxisHeading::down  ? xyz->UnitSize() : -xyz->UnitSize();
 
+    this->xyz = xyz;
     pItem = std::shared_ptr<GraphicsObstacleItem>(
                 new GraphicsObstacleItem(shape, unitX*x, unitY*y, unitX*rX, unitY*rY));
     return pItem.get();
 }
 
 bool ObstacleItem::contains(double px, double py){
+    bool isContained = false;
+    lock.lock();
     if (shape == ObstacleShape::Circle){
-        return ((px-x)*(px-x)/rX/rX + (py-y)*(py-y)/rY/rY < 1);
+        isContained = ((px-x)*(px-x)/rX/rX + (py-y)*(py-y)/rY/rY < 1);
     }
     else if (shape == ObstacleShape::Square){
-        return std::max(abs((px-x)/rY), abs((py-y)/rY)) < 1;
+        isContained = std::max(abs((px-x)/rY), abs((py-y)/rY)) < 1;
     }
-    return false;
+    lock.unlock();
+    return isContained;
 }
