@@ -101,9 +101,9 @@ void CoreData::generateObstacles(){
         int T = int(2*R/v0 * 1000 + 0.5); // 与小车速度相同
         ObstacleMotionData::line = {
             {3, -R, R, T}, // this is 0, next is 3, anti-clockwise
-            {2, R, R, T},
+            {0, R, R, T},
             {1, R, -R, T},
-            {0, -R, -R, T}
+            {2, -R, -R, T}
         };
 
         // 定义障碍物
@@ -146,6 +146,7 @@ void CoreData::update_obstacle(){
                 // 这条线跑完了
                 t = t - line[lineID].T;
                 ob_motion[i].t0 = t_now - t;
+                // qDebug() << QString("Line change from %1 to %2").arg(lineID).arg(line[lineID].line_next);
                 lineID = line[lineID].line_next;
             }
             qreal x = line[lineID].start_point.x();
@@ -204,6 +205,9 @@ void CoreData::onNewRobotPositions(int ID, const RobotStateData& state){
             obstacles[i].pItem->highlight = true;
             obstacles[i].pItem->update();
             this_inside = i;
+            //qDebug()<<QString("t %1 : Robot %2 hit obstacle %3 at (%4, %5)")
+            //          .arg(rec_state[index].back().t_now.count())
+            //          .arg(index).arg(i + 1).arg(state.x,0,'f',2).arg(state.y,0,'f',2);
             break;  // 不会在两个Obstacle里面的
         }
     }
