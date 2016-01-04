@@ -60,8 +60,10 @@ void ExpA::prepare_stop(){
     // 事后：分析、存储数据
     if (!this->isExercise){
         QString dir = c->getName();
-        auto str = dir.toStdWString().c_str();
-        CreateDirectory(dir.toStdWString().c_str(), nullptr);
+        if (dir != "")
+            CreateDirectory(dir.toStdWString().c_str(), nullptr);
+        else
+            dir = ".";  // 用当前路径
         if (use_TTT){
             if (!data->saveExperimentData(QString("%1\\expTTT").arg(dir))){
                 qDebug()<<"Error Creating File for TTT, use default ";

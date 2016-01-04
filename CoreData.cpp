@@ -117,6 +117,8 @@ void CoreData::generateObstacles(){
         const double pi = 3.14159265358979324;
         double w = 2*pi / (T/1000.0) * n_cycle; // 即每一圈的周期是T / n_cycle
                                                 // T之前是ms单位的
+        qDebug()<<QString("Obtacle v = %1 m/s, lineT = %2 ms, w = %3 rad/s, cycle = %4, A = %5 m")
+                  .arg(v0,0,'f',3).arg(T).arg(w, 0, 'f', 4).arg(n_cycle).arg(amplitude, 0, 'f', 3);
 
         for (int i=0;i<4;++i){
             obstacles[i] = {0,0, r2,r2,shape}; // 坐标不重要 会由之后的位置决定
