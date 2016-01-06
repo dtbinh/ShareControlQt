@@ -1,4 +1,4 @@
-#include "MainWindow.h"
+﻿#include "MainWindow.h"
 #include "ui_mainwindow.h"
 #include <QGraphicsSceneMouseEvent>
 #include <QWheelEvent>
@@ -14,8 +14,6 @@ QString getModeString(SceneMode mode){
         return GET_STR(control_forTunnel);
     return "";
 }
-
-
 
 /*
  * MainScene

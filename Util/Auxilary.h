@@ -1,4 +1,4 @@
-#pragma warning(disable: 4819 4100)
+﻿#pragma warning(disable: 4819 4100)
 #ifndef AUXILARY_H
 #define AUXILARY_H
 

@@ -1,7 +1,8 @@
-#include "CoreData.h"
+﻿#include "CoreData.h"
 #include <QDebug>
 #include <QTextStream>
 #include <QFile>
+#include <set>
 
 // 静态类型声明
 std::vector<ObstacleLineData> ObstacleMotionData::line;
@@ -65,9 +66,26 @@ void CoreData::reset_obstacle_position(){
         ob_motion[2].t0 = t0 - line[ob_motion[2].lineID].T / 2;
         ob_motion[3].t0 = t0 - line[ob_motion[3].lineID].T / 4;
     }
+    if (ob_using == ObstacleSet::cortexExperiment){
+        update_obstacle();
+    }
 }
 
 void CoreData::generateObstacles(){
+    if (ob_using == ObstacleSet::cortexExperiment){
+        obstacles.clear();
+        double r2 = 0.13 + 0.25; // The robot is 0.25 wide
+
+        ObstacleShape shape = ObstacleShape::Circle;
+        vision.getOneFrame();
+        vision.get_free_markers(unknown_markers, z_thresh);
+
+        for (Marker& pos: unknown_markers){
+            // qDebug()<<QString("New Cortex Obstacle at (%1, %2), size %3").arg(pos.x(), 0, 'f', 3).arg(pos.y(), 0, 'f', 3).arg(r2, 0, 'f', 3);
+            obstacles.push_back({pos.x / 1000, pos.y / 1000, r2, r2, shape});
+        }
+    }
+
     if (ob_using == ObstacleSet::staticVersion){
         obstacles.clear();
         double R = tunnel_R;
@@ -137,6 +155,41 @@ void CoreData::update_obstacle(){
     using std::chrono::steady_clock;
     auto& line = ObstacleMotionData::line;
 
+    if (ob_using == ObstacleSet::cortexExperiment){
+        vision.getOneFrame();
+        vision.get_free_markers(unknown_markers, z_thresh);
+
+        // A greedy algorithm, each predefined obstalce tend to find its nearest
+        // unknown markers that are far beyond certain limits are ignored
+        double x, y;
+        double dis_lim = 1;
+        std::set<int> selected;
+
+        for (ObstacleItem& ob : obstacles){
+            ob.getRealPos(x, y);
+            double min_dis = 9999;
+            int best = -1;
+            for (int i = 0; i < (int)unknown_markers.size(); ++i){
+                if (selected.find(i) != selected.end())
+                    continue;
+
+                Marker& p = unknown_markers[i];
+                double dx = p.x / 1000 - x;
+                double dy = p.y / 1000 - y;
+                double dis = std::max(std::abs(dx), std::abs(dy));
+                if (dis < min_dis && dis < dis_lim){
+                    min_dis = dis;
+                    best    = i;
+                }
+            }
+            if (best != -1){
+                Marker& p = unknown_markers[best];
+                ob.setRealPos(p.x / 1000, p.y / 1000);
+                selected.insert(best);
+            }
+        }
+    }
+
     if (ob_using == ObstacleSet::dynamicVersion){
         for (int i : ob_move){
             if (!obstacles[i].pItem->isVisible())
@@ -175,6 +228,7 @@ void CoreData::update_obstacle(){
             obstacles[i].setRealPos(x, y);
         }
     }
+
 }
 
 

@@ -1,4 +1,4 @@
-#ifndef OBSTACLEITEM_H
+﻿#ifndef OBSTACLEITEM_H
 #define OBSTACLEITEM_H
 
 #include <QObject>
@@ -41,7 +41,10 @@ public:
     ObstacleItem(double x, double y, double rx, double ry, ObstacleShape shape)
         :x(x),y(y),rX(rx),rY(ry),shape(shape)
     {
-        qDebug()<<QString("new obstacle at (%1, %2) - %3").arg(x).arg(y).arg(rx);
+        qDebug()<<QString("new obstacle at (%1, %2) - %3")
+                  .arg(x, 0, 'f', 3)
+                  .arg(y, 0, 'f', 3)
+                  .arg(rx, 0, 'f', 3);
 
     }
     ObstacleItem(const ObstacleItem& it){
@@ -66,6 +69,13 @@ public:
         lock.lock();
         this->x = x;    // 只是用来方便以后判断contains的
         this->y = y;    // 只是用来方便以后判断contains的
+        lock.unlock();
+    }
+
+    void getRealPos(double& x, double& y){
+        lock.lock();
+        x = this->x;
+        y = this->y;
         lock.unlock();
     }
 

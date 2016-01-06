@@ -1,4 +1,4 @@
-#include "ExternalControl.h"
+﻿#include "ExternalControl.h"
 #include "RobotItem.h"
 #include <QDebug>
 

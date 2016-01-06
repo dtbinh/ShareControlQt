@@ -1,4 +1,4 @@
-#ifndef COORDINATESYSTEM_H
+﻿#ifndef COORDINATESYSTEM_H
 #define COORDINATESYSTEM_H
 #pragma warning(disable: 4819 4100)
 

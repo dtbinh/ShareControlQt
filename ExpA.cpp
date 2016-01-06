@@ -1,4 +1,4 @@
-#include "ExpA.h"
+﻿#include "ExpA.h"
 #include <chrono>
 #include <QTextCodec>
 #include <Shlwapi.h>

@@ -15,7 +15,9 @@ TEMPLATE = app
 INCLUDEPATH += "$$(myLibrary)\ZeroMQ\4_1_3\include"
 INCLUDEPATH += "$$(myCode)\MultiAgent\libnetagent\_src"
 INCLUDEPATH += "$$(myCode)\MultiAgent\libconfig\_src"
+INCLUDEPATH += "$$(myCode)\MultiAgent\libcortex\_src"
 INCLUDEPATH += "$$(myCode)\MultiAgent\ShareControl201509\_src2"
+INCLUDEPATH += "$$(myLibrary)\Motion Analysis\SDK2_1.10.0\include"
 
 SOURCES += main.cpp\
     RobotItem.cpp \
@@ -50,10 +52,17 @@ Debug{
     LIBS += -L"$$(myCode)\MultiAgent\libnetagent\Debug\v120"  -llibnetagent
     LIBS += -L"$$(myCode)\MultiAgent\libconfig\Debug"         -llibconfig
     LIBS += -L"$$(myLibrary)\ZeroMQ\4_1_3\Debug\v120\dynamic" -llibzmq
+    LIBS += -L"$$(myCode)\MultiAgent\libcortex\Debug"         -llibcortex
+    LIBS += -L"$$(myLibrary)\Motion Analysis\SDK2_1.10.0\lib32" -lCortex_SDK
 }
 
 Release{
     LIBS += -L"$$(myCode)\MultiAgent\libnetagent\Release\v120"  -llibnetagent
     LIBS += -L"$$(myCode)\MultiAgent\libconfig\Release"         -llibconfig
     LIBS += -L"$$(myLibrary)\ZeroMQ\4_1_3\Release\v120\dynamic" -llibzmq
+    LIBS += -L"$$(myCode)\MultiAgent\libcortex\Release"         -llibcortex
+    LIBS += -L"$$(myLibrary)\Motion Analysis\SDK2_1.10.0\lib32" -lCortex_SDK
 }
+
+QMAKE_CXXFLAGS_DEBUG   -= -Zc:strictStrings
+QMAKE_CXXFLAGS_RELEASE -= -Zc:strictStrings

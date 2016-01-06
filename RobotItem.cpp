@@ -1,4 +1,4 @@
-#include "RobotItem.h"
+﻿#include "RobotItem.h"
 
 
 CoordinateSystem GraphicsRobotItem::defaultCoordination = CoordinateSystem(100);
@@ -91,7 +91,7 @@ void GraphicsRobotItem::setCoordination(CoordinateSystem *trans){
     qreal   real_heading = this->Heading();
     QPointF real_pos = this->RealPos(); // 记录当前的真实位置
     this->prepareGeometryChange();      // 通知画布准备坐标变换
-    coordination = trans;             // 更新坐标系
+    coordination = trans;               // 更新坐标系
     this->setRealPos(real_pos);         // 保证真实坐标不变
     this->setHeading(real_heading);     // 保证真实姿态不变
 }

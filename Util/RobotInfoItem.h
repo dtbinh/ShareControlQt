@@ -1,4 +1,4 @@
-#ifndef GRAPHICSROBOTINFOITEM_H
+﻿#ifndef GRAPHICSROBOTINFOITEM_H
 #define GRAPHICSROBOTINFOITEM_H
 #pragma warning(disable: 4819 4100)
 

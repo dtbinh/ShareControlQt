@@ -1,4 +1,4 @@
-#include "ObstacleItem.h"
+﻿#include "ObstacleItem.h"
 #include <QGraphicsEllipseItem>
 #include <QGraphicsRectItem>
 #include <cmath>

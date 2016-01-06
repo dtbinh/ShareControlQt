@@ -1,11 +1,11 @@
-#include "RobotInfoItem.h"
+﻿#include "RobotInfoItem.h"
 #include "..\RobotItem.h"
 
 GraphicsRobotInfoItem::GraphicsRobotInfoItem(GraphicsRobotItem* parent):
     QGraphicsSimpleTextItem(parent)
 {
     if (parent){
-        qreal r = parent->Radius();
+        //qreal r = parent->Radius();
         this->setPos(-35, 15);
     }
     this->setFlag(GraphicsItemFlag::ItemIsMovable);

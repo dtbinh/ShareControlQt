@@ -1,4 +1,4 @@
-#ifndef CONTROLNEW_H
+﻿#ifndef CONTROLNEW_H
 #define CONTROLNEW_H
 
 #include <QWidget>

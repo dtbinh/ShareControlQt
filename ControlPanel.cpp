@@ -1,4 +1,4 @@
-#include "ControlPanel.h"
+﻿#include "ControlPanel.h"
 #include "ui_controlpanel.h"
 #include <QTextCodec>
 

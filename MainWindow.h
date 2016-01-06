@@ -1,4 +1,4 @@
-#ifndef MAINWINDOW_H
+﻿#ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 #pragma warning(disable: 4819 4100)
 
@@ -72,17 +72,25 @@ public slots:
     void onExperimentStart(){
         if (data->ob_using == CoreData::ObstacleSet::dynamicVersion){
             data->reset_obstacle_position();
-            myObstacleUpdateTimer = this->startTimer(50);
-            if (myObstacleUpdateTimer == 0){
-                qDebug()<<"Failed to Start Obastacle Update Timer";
-            }
-            else{
-                qDebug()<<"Obstacle moving timer started for 50 ms";
-            }
+            beginUpdateObstacles();
             data->update_obstacle();
         }
     }
     void onExperimentStop(){
+        if (data->ob_using == CoreData::ObstacleSet::dynamicVersion)
+            stopUpdateObstacles();
+    }
+
+    void beginUpdateObstacles(){
+        myObstacleUpdateTimer = this->startTimer(50);
+        if (myObstacleUpdateTimer == 0){
+            qDebug()<<"Failed to Start Obastacle Update Timer";
+        }
+        else{
+            qDebug()<<"Obstacle moving timer started for 50 ms";
+        }
+    }
+    void stopUpdateObstacles(){
         if (myObstacleUpdateTimer){
             killTimer(myObstacleUpdateTimer);
             myObstacleUpdateTimer = 0;

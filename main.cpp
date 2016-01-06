@@ -1,4 +1,4 @@
-#include "MainWindow.h"
+﻿#include "MainWindow.h"
 #include "ControlPanel.h"
 #include "ControlNew.h"
 #include "ExpA.h"
@@ -26,11 +26,11 @@ using std::chrono::steady_clock;
 using std::chrono::duration_cast;
 
 void initMainWindow(MainWindow& w, MainScene& s){
-    QRectF rct(-400, -400, 800, 800);
+    QRectF rct(-400, -300, 800, 600);
 
     w.setScene(&s);
     w.setSceneRect(rct);
-    w.setFixedSize(850, 850);
+    w.setFixedSize(850, 650);
 }
 void connect_robots(int n, ExternalControl& ext, MainScene& s, CoreData& data, float R){
     std::vector<client_data> client_list;
@@ -49,6 +49,22 @@ void connect_robots(int n, ExternalControl& ext, MainScene& s, CoreData& data, f
     s.addRobot(data.robots);
 }
 
+// The settings for physical experiment, 2016/1/5
+void connect_robots_exp(ExternalControl& ext, MainScene& s, CoreData& data, float R){
+    std::vector<client_data> client_list;
+    client_list = {
+        {"192.168.1.224", 1, 4455, 4456},
+        {"192.168.1.245", 2, 4455, 4456}
+    };
+    ext.agent.me = client_data{"192.168.1.200", 0, 5544, 5545};
+    ext.connect(client_list);
+
+    bool show_info = false;
+    data.add_robot(1, -R, -R, 90, show_info);
+    data.add_robot(2,  R,  R, 90, show_info);
+    s.addRobot(data.robots);
+}
+
 void load_configA(section& config, CoreData& data){
     data.experimentID = ExpUsing::expTunnel;
     data.tunnel_continuous = true;
@@ -60,11 +76,30 @@ void load_configA(section& config, CoreData& data){
 
     int ob_type;
     if (config.get_exist("ob_type", ob_type) == true){
+        qDebug()<<QString("Obstacle Type = %1").arg(ob_type);
+
         if (ob_type == 1) data.ob_using = CoreData::ObstacleSet::staticVersion;
         if (ob_type == 2) data.ob_using = CoreData::ObstacleSet::dynamicVersion;
+        if (ob_type == 3){
+            data.vision.myAddr   = "192.168.1.200";
+            data.vision.hostAddr = "192.168.1.200";
+            if (data.vision.init()){
+                qDebug()<<"Cortex inited";
+                if (data.vision.load_setting("..\\VisionSetting.txt")){
+                    qDebug()<<"Cortex Setting Loaded";
+                }
+                else{
+                    qDebug()<<"SomethingWrong Cortex";
+                }
+            }else{
+                qDebug()<<"SomethingWrong Cortex";
+            }
+            data.ob_using = CoreData::ObstacleSet::cortexExperiment;
+        }
     }
 
     data.generateObstacles();
+
     qDebug()<<QString("R = %1, r = %2").arg( data.tunnel_R).arg( data.tunnel_r);
 
     // Load data for experimentA
@@ -109,8 +144,15 @@ int main(int argc, char *argv[]){
     s.onSetupTunnel(data.tunnel_R, data.tunnel_r);
     s.addObstacles(data.obstacles);
 
+    if (data.ob_using == CoreData::ObstacleSet::cortexExperiment){
+        qDebug()<<QString("Obstacle Num = %1").arg(data.obstacles.size());
+        data.show_obstacles();
+        s.beginUpdateObstacles();
+    }
+
     // 连接、放置机器人
-    connect_robots(4, ext, s, data, data.tunnel_R);
+    // connect_robots(4, ext, s, data, data.tunnel_R);
+    connect_robots_exp(ext, s, data, data.tunnel_R);
 
     // 连接各个部分
     QObject::connect(&ext, &ExternalControl::newPosition,

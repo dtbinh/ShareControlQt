@@ -1,4 +1,4 @@
-#ifndef USERARROW_H
+﻿#ifndef USERARROW_H
 #define USERARROW_H
 #include "auxilary.h"
 

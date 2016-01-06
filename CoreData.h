@@ -1,10 +1,11 @@
-#ifndef COREDATA_H
+﻿#ifndef COREDATA_H
 #define COREDATA_H
 
 #include <mutex>
 #include <atomic>
 #include <chrono>
 #include <set>
+#include <cortex.hpp>
 #include "basic/app-share.hpp"
 #include "RobotItem.h"
 #include "ObstacleItem.h"
@@ -75,8 +76,10 @@ public:
                 ob.pItem->show();
                 ob.pItem->highlight = false;
             }
-            obstacles[0].pItem->hide();
-            obstacles[2].pItem->hide();
+            if (ob_using == ObstacleSet::dynamicVersion){
+                obstacles[0].pItem->hide();
+                obstacles[2].pItem->hide();
+            }
         }
         else{
             size_t i = 0;
@@ -137,7 +140,7 @@ public:
     std::vector<ObstacleMotionData> ob_motion;
     std::set<int> ob_move;  // which obstacles are moving
     enum class ObstacleSet{
-        staticVersion, dynamicVersion
+        staticVersion, dynamicVersion, cortexExperiment
     };
     ObstacleSet ob_using = ObstacleSet::staticVersion;
 
@@ -148,12 +151,17 @@ public:
     std::chrono::steady_clock::time_point t_end;
 
     // 其他的设置
-    bool newTargetAsReplace = false;  // 新的UserTarget是按Replace还是按叠加
-    bool useDefaultFromClient = true; // 当ResetConfig的时候 是否是从Client处获得(否则就按默认构造函数处理)
+    bool newTargetAsReplace = false;   // 新的UserTarget是按Replace还是按叠加
+    bool useDefaultFromClient = true;  // 当ResetConfig的时候 是否是从Client处获得(否则就按默认构造函数处理)
     bool useObstacles   = false;       // 要不要显示障碍物
     bool showNearObOnly = false;       // 障碍物要不要只在靠近的时候显示
     float detect_range  = 1;           // 如果动态显示障碍物的话，那么在距离多远的时候显示
-    std::chrono::seconds exp_time;      // 实验时间
+    std::chrono::seconds exp_time;     // 实验时间
+
+    // Cortex System For Obstacle Capture...
+    Cortex vision;
+    float z_thresh = 150;
+    std::vector<Marker> unknown_markers;
 };
 
 

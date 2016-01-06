@@ -1,4 +1,4 @@
-
+﻿
 #ifndef EXTERNALCONTROL_H
 #define EXTERNALCONTROL_H
 

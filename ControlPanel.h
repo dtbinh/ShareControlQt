@@ -1,4 +1,4 @@
-#ifndef CONTROLPANEL_H
+﻿#ifndef CONTROLPANEL_H
 #define CONTROLPANEL_H
 #pragma warning(disable: 4819 4100)
 
